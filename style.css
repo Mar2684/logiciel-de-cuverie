@@ -1,0 +1,45 @@
+html, body {
+    width: 100vw; height: 100vh;
+    margin: 0px; padding: 0px;
+    position: absolute;
+    top: 0px;
+    overflow-x: hidden;
+}
+
+body {
+    height: 100vh;
+    box-sizing: border-box;
+    background-color: rgb(207, 207, 207);
+    font-size: 100%;
+}
+
+header {
+    width: 100vw;
+    height: 3vh;
+    display: flex;
+    position: fixed;
+    flex-direction: row;
+    align-items: end;
+    justify-content: start;
+    gap: 2px;
+    background-color: rgb(207, 207, 207);
+    z-index: 1;
+}
+
+header a {
+    width: 10vw;
+    height:3vh;
+    padding-top: 5px;
+    background-color: rgb(150, 150, 150);
+    color: black;
+    border: black solid 2px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+main {
+    position: relative;
+    top: 3vh;
+}
