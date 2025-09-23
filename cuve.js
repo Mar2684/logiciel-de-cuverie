@@ -107,7 +107,7 @@ function synch_cuve() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    get_data_cuves();
+    // get_data_cuves();
     $('select.select-cuves').each(function () {
             let groupe
             groupe = document.createElement('optgroup')
@@ -163,12 +163,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 processData: false,
             });
         request.done(function (output_success) {
+            console.log(output_success);
             if (output_success.error) {
                 alert(output_success.message);
-                console.log(output_success.message);
+                console.log(output_success.output);
             } else {
                 alert(output_success.message);
-                synch_cuve();
+                console.log(output_success.output);
+                // synch_cuve();
                 location.reload()
             }
         });
@@ -177,7 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let code = http_error.status;
             let code_label = http_error.statusText;
             alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
+            console.log(output_success.output);
         });
     })
-    synch_cuve();
+    // synch_cuve();
 })

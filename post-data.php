@@ -5,6 +5,7 @@
         $Output = array(
             "error" => false,
             "message" => "N/A",
+            "output" => ""
         );
         
         $link = mysqli_connect('127.0.0.1', 'root', '', 'cuverie');
@@ -17,9 +18,10 @@
             switch ($nom_table) {
 
                 case 'transfert_de_cuve':
+                    
                     $données_cuve_départ = mysqli_fetch_assoc(mysqli_query($link, "SELECT volume, unité, appelation, millesime, cépage FROM cuves WHERE nom = '".$_POST['cuve_départ']."'"));
                     $données_cuve_arrivée = mysqli_fetch_assoc(mysqli_query($link, "SELECT volume, volume_total FROM cuves WHERE nom = '".$_POST['cuve_arrivée']."'"));
-
+                    $Output["output"] = $données_cuve_départ;
                     if ($données_cuve_départ['unité'] == 'hl') {
                         if ($données_cuve_arrivée['volume'] + $_POST['volume'] > $données_cuve_arrivée['volume_total']) {
                             throw new Exception("Le volume total après transfert dépasse la capacité de la cuve d'arrivée.");
@@ -121,9 +123,11 @@
             }
         }
     } catch (\Throwable $e) {
-        mysqli_rollback($link);
-    $Output["error"] = true;
-    $Output["message"] = $e->getMessage();
+        if (isset($link) && $link instanceof mysqli) {
+            mysqli_rollback($link);
+        }
+        $Output["error"] = true;
+        $Output["message"] = $e->getMessage();
     } finally {
         echo json_encode($Output, JSON_FORCE_OBJECT);
         die();
