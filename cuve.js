@@ -3,6 +3,7 @@ let list_cuves_fibre = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9"]
 let list_barriques = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11"]
 let list_cuvons = ["C1"]
 let liste_nom_cuves = [...list_cuves_inox, ...list_cuves_fibre, ...list_barriques, ...list_cuvons];
+let liste_cuves = {}
 
 function get_data_cuves() {
     let request = $.ajax({
@@ -16,11 +17,16 @@ function get_data_cuves() {
         if (output_success.error) {
             alert('Impossible de récupérer les données serveur : ' + output_success.message);
         } else {
+            liste_cuves = {}
             console.log(output_success.data);
-            let list_cuves = {}
-            liste_nom_cuves.forEach(cuve => {
-                list_cuves[cuve] = output_success.data[cuve]
+            Object.keys(output_success.data).forEach(key => {
+                let row = output_success.data[key]
+                row['volume'] = parseFloat(row['volume'])
+                row['volume_total'] = parseFloat(row['volume_total'])
+                liste_cuves[output_success.data[key]['nom']] = row
             })
+            console.log(liste_cuves)
+            synch_cuve();
         }
     })
     request.fail(function (http_error) {
@@ -42,6 +48,7 @@ function aff_action(num_action) {
 }
 
 function synch_cuve() {
+    console.log('synchronisation des cuves');
     let request = 
         $.ajax({
             type: "POST",
@@ -53,48 +60,50 @@ function synch_cuve() {
     request.done(function (output_success) {
         if (output_success.error) {
             alert('Impossible de synchroniser les données serveur : ' + output_success.message);
-        } else {
-            let liste_cuves = {}
-            liste_nom_cuves.forEach(cuve => {
-                liste_cuves[cuve] = [0,'hl']
-            })
+        } else {            
             try {
+                console.log(output_success.data);
                 let num_action = Object.keys(output_success.data).length - 1
                 for (let i =  Object.keys(output_success.data).length - 1; i >= 0; i--) {
                     action = output_success.data[i]
-                    switch (output_success.data[i['type_action']]) {
+                    switch (action["type_action"]) {
                         case 'transfert_de_cuve':
-                            if (liste_cuves[action['cuve_arrivée']][1] == 'hl') {
-                                if (liste_cuves[action['cuve_arrivée']][0] + action > $données_cuve_arrivée['volume_total']) {
-                                    throw new Error("Le volume total après transfert dépasse la capacité de la cuve d'arrivée.");
-                                } else if ($_POST['volume'] > $données_cuve_départ['volume']) {
-                                    throw new Error("Le volume transféré dépasse le volume disponible dans la cuve de départ.");
-                                } else {
-                                    
-                                };
-                            } else if ($données_cuve_départ['unité'] == 'kg') {
-                                
-                            };
+                            console.log(action)
+                            console.log(action["volume"])
+                            let cuve_départ = action["cuve_départ"]
+                            let cuve_arrivée = action["cuve_arrivée"]
+                            let volume = parseFloat(action["volume_quantité"])
+                            console.log(liste_cuves)
+                            console.log(liste_cuves[cuve_départ]['volume'], liste_cuves[cuve_arrivée]['volume'], volume)
+                            if (liste_cuves[cuve_départ]['unité'] == 'hl') {
+                                liste_cuves[cuve_départ]['volume'] -= volume
+                                liste_cuves[cuve_arrivée]['volume'] += volume
+                            } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
+                                liste_cuves[cuve_départ]['volume'] = 0
+                                liste_cuves[cuve_arrivée]['volume'] = volume
+                            }
+                            console.log(liste_cuves[cuve_départ]['volume'], liste_cuves[cuve_arrivée]['volume'], volume)
                             break;
-                    }
-                }   
+                    } 
+                }  
             } catch (e) {
                 alert(e.message);
             }
 
             $('div.cuves').each(function () {
                 let cuve = this.id;
-                if (output_success.data[cuve]['unité'] == 'kg') {
+                liste_cuves[cuve]
+                if (liste_cuves[cuve]['unité'] == 'kg') {
                     this.querySelector(".rate").style.height = '0%';
                     this.querySelector(".fill_indicator").style.background = 'linear-gradient(to right, rgb(13, 104, 0), rgb(13, 197, 0), rgb(13, 54, 0))';
                 } else {
-                    this.querySelector(".rate").style.height = 100 - (output_success.data[cuve]['volume'] / output_success.data[cuve]['volume_total'] * 100) + '%';
+                    this.querySelector(".rate").style.height = 100 - (liste_cuves[cuve]['volume'] / liste_cuves[cuve]['volume_total'] * 100) + '%';
                     this.querySelector(".fill_indicator").style.background = "linear-gradient(to right, rgb(104, 0, 0), rgb(197, 0, 0), rgb(54, 0, 0))";
                 }
-                this.querySelector('.textAppelation').textContent = output_success.data[cuve]['appelation'];
-                this.querySelector('.textMillesime').textContent = output_success.data[cuve]['millesime'];
-                this.querySelector('.textCépage').textContent = output_success.data[cuve]['cépage'];
-                this.querySelector('.volume').textContent = output_success.data[cuve]['volume'] + ' ' + output_success.data[cuve]['unité'];
+                this.querySelector('.textAppelation').textContent = liste_cuves[cuve]['appelation'];
+                this.querySelector('.textMillesime').textContent = liste_cuves[cuve]['millesmime'];
+                this.querySelector('.textCépage').textContent = liste_cuves[cuve]['cépage'];
+                this.querySelector('.volume').textContent = liste_cuves[cuve]['volume'] + ' ' + liste_cuves[cuve]['unité'];
             })
         };
     })
@@ -107,7 +116,7 @@ function synch_cuve() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // get_data_cuves();
+    get_data_cuves();
     $('select.select-cuves').each(function () {
             let groupe
             groupe = document.createElement('optgroup')
@@ -166,12 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(output_success);
             if (output_success.error) {
                 alert(output_success.message);
-                console.log(output_success.output);
             } else {
                 alert(output_success.message);
-                console.log(output_success.output);
-                // synch_cuve();
-                location.reload()
+                synch_cuve();
             }
         });
         request.fail(function (http_error) {
@@ -182,5 +188,4 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(output_success.output);
         });
     })
-    // synch_cuve();
 })

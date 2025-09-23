@@ -32,8 +32,6 @@
                             "
                             INSERT INTO actions (type_action, date_action) VALUES ('".$nom_table."', NOW());
                             INSERT INTO ".$nom_table." (id, date, cuve_départ, volume, cuve_arrivée) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['cuve_départ']."', '".$_POST['volume']."', '".$_POST['cuve_arrivée']."');
-                            UPDATE cuves SET volume = volume - '".$_POST['volume']."' WHERE nom = '".$_POST['cuve_départ']."';
-                            UPDATE cuves SET volume = volume + '".$_POST['volume']."', appelation = '".$données_cuve_départ['appelation']."', millesime = '".$données_cuve_départ['millesime']."', cépage = '".$données_cuve_départ['cépage']."' WHERE nom = '".$_POST['cuve_arrivée']."';
                             ";
                         };
                         break;

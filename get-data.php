@@ -52,11 +52,11 @@
                         '/') AS cuve_départ,
                         IFNULL(transfert_de_cuve.cuve_arrivée, '/') AS cuve_arrivée,
                         COALESCE(
-                            CONCAT(ajout_intrant.quantité, ' kg'),
-                            CONCAT(apport_de_vendanges.quantité, ' kg'),
-                            CONCAT(mise_en_bouteille.volume, ' hL'),
-                            CONCAT(sortie_lie.volume, ' hL'),
-                            CONCAT(transfert_de_cuve.volume, ' hL'),
+                            ajout_intrant.quantité,
+                            apport_de_vendanges.quantité,
+                            mise_en_bouteille.volume,
+                            sortie_lie.volume,
+                            transfert_de_cuve.volume,
                         '/') AS volume_quantité,
                         IFNULL(ajout_intrant.libellé, '/') AS libellé,
                         IFNULL(mise_en_bouteille.numéro_lot, '/') AS numéro_lot,
@@ -77,19 +77,17 @@
                     ";
                     break;
                 case 'cuves_data':
-                    $data = [];
                     $request_sql =
                     "
                     SELECT * FROM cuves
                     ";
                     break;
                 default:
-                    throw new Exception("Module inéxistant");
+                    throw new Exception("Module inesxistant");
             }
             if (mysqli_multi_query($link, $request_sql)) {      
                 do {
                     if ($result = mysqli_store_result($link)) {
-                        $rows = [];
                         $data = [];
                         while ($row = mysqli_fetch_assoc($result)) {
                             array_push($data, $row);
@@ -108,7 +106,7 @@
         $Output["error"] = true;
         $Output["message"] = $e->getMessage();
     } finally {
-        echo json_encode($Output, JSON_FORCE_OBJECT);
+        echo json_encode($Output);
         die();
     }
 ?>
