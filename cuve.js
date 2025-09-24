@@ -75,6 +75,15 @@ function synch_cuve() {
                                 liste_cuves[cuve_arrivée]['volume'] = volume
                             }
                             break;
+                        case 'apport_de_vendandes':
+                            let cuve_apport = action["cuve_apport"]
+                            let quantité = parseFloat(action["volume_quantité"])
+                            liste_cuves[cuve_apport]['volume'] += quantité
+                            liste_cuves[cuve_apport]['unité'] = 'kg'
+                            liste_cuves[cuve_apport]['appelation'] = action["appelation"]
+                            liste_cuves[cuve_apport]['cépage'] = action["cépage"]
+                            liste_cuves[cuve_apport]['millesmime'] = (new Date(action["date"])).getFullYear()
+                            break;
                     } 
                 }  
             } catch (e) {
@@ -151,9 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         let Datas = new FormData(this);
-        Datas.append('data_cuve_départ', JSON.stringify(liste_cuves[Datas.get('cuve_départ')]));
-        Datas.append('data_cuve_arrivée', JSON.stringify(liste_cuves[Datas.get('cuve_arrivée')]));
-        let request = 
+        if (Datas.get('cuve_départ')) {
+            Datas.append('data_cuve_départ', JSON.stringify(liste_cuves[Datas.get('cuve_départ')]));
+        }
+        if (Datas.get('cuve_arrivée')) {
+            Datas.append('data_cuve_arrivée', JSON.stringify(liste_cuves[Datas.get('cuve_arrivée')]));
+        }
+        if (Datas.get('cuve_apport')) {
+            Datas.append('data_cuve_apport', JSON.stringify(liste_cuves[Datas.get('cuve_apport')]));
+        }
+            let request = 
             $.ajax({
                 type: this.method,
                 url: this.action,
@@ -168,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(output_success.message);
             } else {
                 alert(output_success.message);
-                synch_cuve();
+                get_data_cuves();
             }
         });
         request.fail(function (http_error) {

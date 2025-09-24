@@ -36,8 +36,6 @@
                         "
                         INSERT INTO actions (type_action, date_action) VALUES ('".$nom_table."', NOW());
                         INSERT INTO ".$nom_table." (id, date, cuve_départ, volume, cuve_arrivée) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['cuve_départ']."', '".$_POST['volume']."', '".$_POST['cuve_arrivée']."');
-                        UPDATE cuves SET unité = 'hl',  volume = 0 WHERE nom = '".$_POST['cuve_départ']."';
-                        UPDATE cuves SET volume = '".$_POST['volume']."', appelation = '".$_POST['data_cuve_départ']['appelation']."', millesime = '".$_POST['data_cuve_départ']['millesime']."', cépage = '".$_POST['data_cuve_départ']['cépage']."' WHERE nom = '".$_POST['cuve_arrivée']."';
                         ";
                     };
                     break;
@@ -46,9 +44,7 @@
                     $request_sql =
                     "
                     INSERT INTO actions (type_action, date_action) VALUES ('".$nom_table."', NOW());
-                    INSERT INTO ".$nom_table." (id, date, parcelle, quantité, cuve_apport, appelation, cépage) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['parcelle']."', '".$_POST['quantité']."', '".$_POST['cuve_apport']."', '".$_POST['appelation']."', '".$_POST['cépage']."');
-                    UPDATE cuves SET volume = '".$_POST['quantité']."', unité = 'kg', appelation = '".$_POST['appelation']."', millesime = '".date('Y', strtotime($_POST['date']))."', cépage = '".$_POST['cépage']."' WHERE nom = '".$_POST['cuve_apport']."';
-                    ";
+                    INSERT INTO ".$nom_table." (id, date, parcelle, quantité, cuve_apport, appelation, cépage) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['parcelle']."', '".$_POST['quantité']."', '".$_POST['cuve_apport']."', '".$_POST['appelation']."', '".$_POST['cépage']."');                    ";
                     break;
 
                 case 'mise_en_bouteille':
