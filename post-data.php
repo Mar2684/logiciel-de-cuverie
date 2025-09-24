@@ -19,7 +19,7 @@
                     $_POST['data_cuve_départ'] = json_decode($_POST['data_cuve_départ'], true);
                     $_POST['data_cuve_arrivée'] = json_decode($_POST['data_cuve_arrivée'], true);
                     if ($_POST['data_cuve_départ']['unité'] == 'hl') {
-                        if ($_POST['data_cuve_départ']['volume'] + $_POST['volume'] > $_POST['data_cuve_arrivée']['volume_total']) {
+                        if ($_POST['data_cuve_arrivée']['volume'] + $_POST['volume'] > $_POST['data_cuve_arrivée']['volume_total']) {
                             throw new Exception("Le volume total après transfert dépasse la capacité de la cuve d'arrivée.");
                         } else if ($_POST['volume'] > $_POST['data_cuve_départ']['volume']) {
                             throw new Exception("Le volume transféré dépasse le volume disponible dans la cuve de départ.");
@@ -48,49 +48,43 @@
                     break;
 
                 case 'mise_en_bouteille':
-                    $données_cuve_départ = mysqli_fetch_assoc(mysqli_query($link, "SELECT volume, unité, appelation, millesime, cépage FROM cuves WHERE nom = '".$_POST['cuve_départ']."'"));
-                    if ($données_cuve_départ['unité'] != 'hl') {
+                    $_POST['data_cuve_départ'] = json_decode($_POST['data_cuve_départ'], true);
+                    if ($_POST['data_cuve_départ']['unité'] != 'hl') {
                         throw new Exception("La cuve de départ doit contenir du volume en hectolitres.");
-                    } else if ($_POST['volume'] > $données_cuve_départ['volume']) {
+                    } else if ($_POST['volume'] > $_POST['data_cuve_départ']['volume']) {
                         throw new Exception("Le volume mis en bouteille dépasse le volume disponible dans la cuve d'apport.");
                     } else {
                         $request_sql =
                         "
                         INSERT INTO actions (type_action, date_action) VALUES ('".$nom_table."', NOW());
-                        INSERT INTO ".$nom_table." (id, date, cuve_départ, volume, numéro_lot, appelation) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['cuve_départ']."', '".$_POST['volume']."', '".$_POST['numéro_lot']."', '".$données_cuve_départ['appelation']."');
-                        UPDATE cuves SET volume = volume - ".$_POST['volume']." WHERE nom = '".$_POST['cuve_départ']."';
-                        ";
+                        INSERT INTO ".$nom_table." (id, date, cuve_départ, volume, numéro_lot, appelation) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['cuve_départ']."', '".$_POST['volume']."', '".$_POST['numéro_lot']."', '".$_POST['data_cuve_départ']['appelation']."');                        ";
                     };
                     break;
 
                 case 'sortie_lie':
-                    $données_cuve_départ = mysqli_fetch_assoc(mysqli_query($link, "SELECT volume, unité, appelation, millesime, cépage FROM cuves WHERE nom = '".$_POST['cuve_départ']."'"));
-                    if ($données_cuve_départ['unité'] != 'hl') {
+                    $_POST['data_cuve_départ'] = json_decode($_POST['data_cuve_départ'], true);
+                    if ($_POST['data_cuve_départ']['unité'] != 'hl') {
                         throw new Exception("La cuve de départ doit contenir du volume en hectolitres.");
-                    } else if ($_POST['volume'] > $données_cuve_départ['volume']) {
+                    } else if ($_POST['volume'] > $_POST['data_cuve_départ']['volume']) {
                         throw new Exception("Le volume de sortie dépasse le volume disponible dans la cuve de départ.");
                     } else {
                         $request_sql =
                         "
                         INSERT INTO actions (type_action, date_action) VALUES ('".$nom_table."', NOW());
                         INSERT INTO ".$nom_table." (id, date, cuve_départ, volume) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['cuve_départ']."', '".$_POST['volume']."');
-                        UPDATE cuves SET volume = volume - '".$_POST['volume']."' WHERE nom = '".$_POST['cuve_départ']."';
                         ";
                     };
                     break;
 
                 case 'ajout_intrant':
-                    $données_cuve_apport = mysqli_fetch_assoc(mysqli_query($link, "SELECT volume, volume_total, unité, appelation, millesime, cépage FROM cuves WHERE nom = '".$_POST['cuve_apport']."'"));
-                    if ($données_cuve_apport['unité'] != 'hl') {
+                    $_POST['data_cuve_apport'] = json_decode($_POST['data_cuve_apport'], true);
+                    if ($_POST['data_cuve_apport']['unité'] != 'hl') {
                         throw new Exception("La cuve d'apport doit contenir du volume en hectolitres.");
-                    } else if ($_POST['quantité'] + $données_cuve_apport['volume'] > $données_cuve_apport['volume_total']) {
-                        throw new Exception("Le volume total après ajout dépasse la capacité de la cuve d'apport.");
                     } else {
                         $request_sql =
                         "
                         INSERT INTO actions (type_action, date_action) VALUES ('".$nom_table."', NOW());
                         INSERT INTO ".$nom_table." (id, date, cuve_apport, libellé, quantité) VALUES (LAST_INSERT_ID(), '".$_POST['date']."', '".$_POST['cuve_apport']."', '".$_POST['libellé']."', '".$_POST['quantité']."');
-                        UPDATE cuves SET volume = volume + '".$_POST['quantité']."' WHERE nom = '".$_POST['cuve_apport']."';
                         ";
                     };
                     break;

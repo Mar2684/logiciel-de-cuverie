@@ -61,28 +61,35 @@ function synch_cuve() {
             try {
                 let num_action = Object.keys(output_success.data).length - 1
                 for (let i =  Object.keys(output_success.data).length - 1; i >= 0; i--) {
-                    action = output_success.data[i]
+                    let action = output_success.data[i]
+                    let cuve_départ = action["cuve_départ"]
+                    let cuve_arrivée = action["cuve_arrivée"]
+                    let volume_quantité = parseFloat(action["volume_quantité"])
                     switch (action["type_action"]) {
                         case 'transfert_de_cuve':
-                            let cuve_départ = action["cuve_départ"]
-                            let cuve_arrivée = action["cuve_arrivée"]
-                            let volume = parseFloat(action["volume_quantité"])
+                            
                             if (liste_cuves[cuve_départ]['unité'] == 'hl') {
-                                liste_cuves[cuve_départ]['volume'] -= volume
-                                liste_cuves[cuve_arrivée]['volume'] += volume
+                                liste_cuves[cuve_départ]['volume'] -= volume_quantité
+                                liste_cuves[cuve_arrivée]['volume'] += volume_quantité
                             } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
                                 liste_cuves[cuve_départ]['volume'] = 0
-                                liste_cuves[cuve_arrivée]['volume'] = volume
+                                liste_cuves[cuve_arrivée]['volume'] = volume_quantité
+                                liste_cuves[cuve_arrivée]['unité'] = 'hl'
+                                liste_cuves[cuve_départ]['unité'] = 'hl'
                             }
                             break;
-                        case 'apport_de_vendandes':
-                            let cuve_apport = action["cuve_apport"]
-                            let quantité = parseFloat(action["volume_quantité"])
-                            liste_cuves[cuve_apport]['volume'] += quantité
-                            liste_cuves[cuve_apport]['unité'] = 'kg'
-                            liste_cuves[cuve_apport]['appelation'] = action["appelation"]
-                            liste_cuves[cuve_apport]['cépage'] = action["cépage"]
-                            liste_cuves[cuve_apport]['millesmime'] = (new Date(action["date"])).getFullYear()
+                        case 'apport_de_vendanges':
+                            liste_cuves[cuve_départ]['volume'] = volume_quantité
+                            liste_cuves[cuve_départ]['unité'] = 'kg'
+                            liste_cuves[cuve_départ]['appelation'] = action["appelation"]
+                            liste_cuves[cuve_départ]['cépage'] = action["cépage"]
+                            liste_cuves[cuve_départ]['millesmime'] = (new Date(action["date"])).getFullYear()
+                            break;
+                        case 'mise_en_bouteille':
+                            liste_cuves[cuve_départ]['volume'] -= volume_quantité
+                            break;
+                        case 'sortie_lie':
+                            liste_cuves[cuve_départ]['volume'] -= volume_quantité
                             break;
                     } 
                 }  

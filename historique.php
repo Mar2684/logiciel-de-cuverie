@@ -80,4 +80,5 @@
             } 
         ?>
     </tbody>
+    <button>Effacer dernière action</button>
 </table>

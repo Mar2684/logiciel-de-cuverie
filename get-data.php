@@ -58,6 +58,13 @@
                             sortie_lie.volume,
                             transfert_de_cuve.volume,
                         '/') AS volume_quantité,
+                        COALESCE(
+                            ajout_intrant.date,
+                            apport_de_vendanges.date,
+                            mise_en_bouteille.date,
+                            sortie_lie.date,
+                            transfert_de_cuve.date,
+                        '/') AS date,
                         IFNULL(ajout_intrant.libellé, '/') AS libellé,
                         IFNULL(mise_en_bouteille.numéro_lot, '/') AS numéro_lot,
                         COALESCE(
