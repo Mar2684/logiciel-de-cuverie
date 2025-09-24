@@ -18,14 +18,12 @@ function get_data_cuves() {
             alert('Impossible de récupérer les données serveur : ' + output_success.message);
         } else {
             liste_cuves = {}
-            console.log(output_success.data);
             Object.keys(output_success.data).forEach(key => {
                 let row = output_success.data[key]
                 row['volume'] = parseFloat(row['volume'])
                 row['volume_total'] = parseFloat(row['volume_total'])
                 liste_cuves[output_success.data[key]['nom']] = row
             })
-            console.log(liste_cuves)
             synch_cuve();
         }
     })
@@ -48,7 +46,6 @@ function aff_action(num_action) {
 }
 
 function synch_cuve() {
-    console.log('synchronisation des cuves');
     let request = 
         $.ajax({
             type: "POST",
@@ -62,19 +59,14 @@ function synch_cuve() {
             alert('Impossible de synchroniser les données serveur : ' + output_success.message);
         } else {            
             try {
-                console.log(output_success.data);
                 let num_action = Object.keys(output_success.data).length - 1
                 for (let i =  Object.keys(output_success.data).length - 1; i >= 0; i--) {
                     action = output_success.data[i]
                     switch (action["type_action"]) {
                         case 'transfert_de_cuve':
-                            console.log(action)
-                            console.log(action["volume"])
                             let cuve_départ = action["cuve_départ"]
                             let cuve_arrivée = action["cuve_arrivée"]
                             let volume = parseFloat(action["volume_quantité"])
-                            console.log(liste_cuves)
-                            console.log(liste_cuves[cuve_départ]['volume'], liste_cuves[cuve_arrivée]['volume'], volume)
                             if (liste_cuves[cuve_départ]['unité'] == 'hl') {
                                 liste_cuves[cuve_départ]['volume'] -= volume
                                 liste_cuves[cuve_arrivée]['volume'] += volume
@@ -82,7 +74,6 @@ function synch_cuve() {
                                 liste_cuves[cuve_départ]['volume'] = 0
                                 liste_cuves[cuve_arrivée]['volume'] = volume
                             }
-                            console.log(liste_cuves[cuve_départ]['volume'], liste_cuves[cuve_arrivée]['volume'], volume)
                             break;
                     } 
                 }  
@@ -160,7 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         let Datas = new FormData(this);
-
+        Datas.append('data_cuve_départ', JSON.stringify(liste_cuves[Datas.get('cuve_départ')]));
+        Datas.append('data_cuve_arrivée', JSON.stringify(liste_cuves[Datas.get('cuve_arrivée')]));
         let request = 
             $.ajax({
                 type: this.method,
@@ -172,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 processData: false,
             });
         request.done(function (output_success) {
-            console.log(output_success);
             if (output_success.error) {
                 alert(output_success.message);
             } else {
@@ -185,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let code = http_error.status;
             let code_label = http_error.statusText;
             alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
-            console.log(output_success.output);
         });
     })
 })
