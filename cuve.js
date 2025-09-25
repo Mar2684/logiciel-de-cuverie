@@ -122,6 +122,36 @@ function synch_cuve() {
     });
 }
 
+function create_sqlRequest(data) {
+    data = Object.fromEntries(data.entries());
+    console.log(data)
+    let nom_table = data['nom_table']
+    let cuve_départ = data['cuve_départ'] ?? data['cuve_apport'] ?? '/';
+    let cuve_arrivée = data['cuve_arrivée'] ?? '/';
+    console.log(nom_table, cuve_départ, cuve_arrivée)
+    switch (nom_table) {
+            case 'transfert_de_cuve':
+                console.log('ok1')
+                if (data['volume'] <= 0) {
+                    console.log('ok2')
+                    alert('Le volume transféré doit être supérieur à 0 !');
+                } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && liste_cuves[cuve_arrivée]['volume'] + data['volume'] > liste_cuves[cuve_arrivée]['volume_total']) {
+                    console.log('ok3')
+                    alert('Le volume total dans la cuve d\'arrivée serait dépassé !');
+                    return '';
+                } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && data['volume'] > liste_cuves[cuve_départ]['volume']) {
+                    console.log('ok4')
+                    alert('Le volume transféré est supérieur au volume disponible dans la cuve de départ !');
+                    return '';
+                } else {
+                    console.log('ok')
+                    return `INSERT INTO actions (type_action, date_action) VALUES (${nom_table}, NOW());
+                            INSERT INTO transfert_de_cuve (id, date, cuve_départ, cuve_arrivée, volume) VALUES (LAST_INSERT_ID(), ${data['date']}, ${cuve_départ}, ${cuve_arrivée}, ${data['volume']});
+                            `;
+                }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     get_data_cuves();
     $('select.select-cuves').each(function () {
@@ -167,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         let Datas = new FormData(this);
+        console.log(create_sqlRequest(Datas))
         if (Datas.get('cuve_départ')) {
             Datas.append('data_cuve_départ', JSON.stringify(liste_cuves[Datas.get('cuve_départ')]));
         }
@@ -176,16 +207,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Datas.get('cuve_apport')) {
             Datas.append('data_cuve_apport', JSON.stringify(liste_cuves[Datas.get('cuve_apport')]));
         }
-            let request = 
-            $.ajax({
-                type: this.method,
-                url: this.action,
-                data: Datas,
-                timeout: 120000,
-                cache: false,
-                contentType: false,
-                processData: false,
-            });
+
+        let request = 
+        $.ajax({
+            type: this.method,
+            url: this.action,
+            data: Datas,
+            timeout: 120000,
+            cache: false,
+            contentType: false,
+            processData: false,
+        });
         request.done(function (output_success) {
             if (output_success.error) {
                 alert(output_success.message);
