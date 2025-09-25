@@ -8,7 +8,7 @@ let liste_cuves = {}
 function get_data_cuves() {
     let request = $.ajax({
         type: "POST",
-        url: 'get-data.php',
+        url: 'dataBase_request.php',
         data: {'module': 'cuves_data'},
         timeout: 120000,
         cache: false,
@@ -49,7 +49,7 @@ function synch_cuve() {
     let request = 
         $.ajax({
             type: "POST",
-            url: 'get-data.php',
+            url: 'dataBase_request.php',
             data: {'module': 'actions_data'},
             timeout: 120000,
             cache: false,
@@ -122,33 +122,80 @@ function synch_cuve() {
     });
 }
 
-function create_sqlRequest(data) {
+function create_postSqlRequest(data) {
     data = Object.fromEntries(data.entries());
-    console.log(data)
     let nom_table = data['nom_table']
     let cuve_départ = data['cuve_départ'] ?? data['cuve_apport'] ?? '/';
     let cuve_arrivée = data['cuve_arrivée'] ?? '/';
-    console.log(nom_table, cuve_départ, cuve_arrivée)
     switch (nom_table) {
             case 'transfert_de_cuve':
-                console.log('ok1')
                 if (data['volume'] <= 0) {
-                    console.log('ok2')
                     alert('Le volume transféré doit être supérieur à 0 !');
                 } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && liste_cuves[cuve_arrivée]['volume'] + data['volume'] > liste_cuves[cuve_arrivée]['volume_total']) {
-                    console.log('ok3')
                     alert('Le volume total dans la cuve d\'arrivée serait dépassé !');
                     return '';
                 } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && data['volume'] > liste_cuves[cuve_départ]['volume']) {
-                    console.log('ok4')
                     alert('Le volume transféré est supérieur au volume disponible dans la cuve de départ !');
                     return '';
                 } else {
-                    console.log('ok')
-                    return `INSERT INTO actions (type_action, date_action) VALUES (${nom_table}, NOW());
-                            INSERT INTO transfert_de_cuve (id, date, cuve_départ, cuve_arrivée, volume) VALUES (LAST_INSERT_ID(), ${data['date']}, ${cuve_départ}, ${cuve_arrivée}, ${data['volume']});
-                            `;
+                    return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
+                            INSERT INTO transfert_de_cuve (id, date, cuve_départ, cuve_arrivée, volume) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', '${cuve_arrivée}', ${data['volume']});
+                            `.replace(/\s+/g, ' ').trim();;
                 }
+            case 'apport_de_vendanges':
+                if (data['volume'] <= 0) {
+                    alert('Le volume apporté doit être supérieur à 0 !');
+                    return '';
+                } else {
+                    return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
+                            INSERT INTO apport_de_vendanges (id, date, parcelle, quantité, cuve_apport, appelation, cépage) VALUES (LAST_INSERT_ID(), ${data['date']}, '${data['parcelle']}', ${data['quantité']}, '${cuve_départ}', '${data['appelation']}', '${data['cépage']}');
+                            `.replace(/\s+/g, ' ').trim();;
+                }
+            case 'mise_en_bouteille':
+                if (data['volume'] <= 0) {
+                    alert('Le volume mis en bouteille doit être supérieur à 0 !');
+                    return '';
+                } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
+                    alert('La cuve doit contenir du vin (hl) et non des vendanges (kg) !');
+                    return '';  
+                } else if (data['volume'] > liste_cuves[cuve_départ]['volume']) {
+                    alert('Le volume mis en bouteille est supérieur au volume disponible dans la cuve !');
+                    return '';
+                } else {
+                    return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
+                            INSERT INTO mise_en_bouteille (id, date, cuve_départ, volume, numéro_lot, appelation) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', ${data['volume']}, '${data['numéro_lot']}', '${data['appelation']}');
+                            `.replace(/\s+/g, ' ').trim();;
+                }
+            case 'sortie_lie':
+                if (data['volume'] <= 0) {
+                    alert('Le volume de lie sortie doit être supérieur à 0 !');
+                    return '';
+                } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
+                    alert('La cuve doit contenir du vin (hl) et non des vendanges (kg) !');
+                    return '';  
+                } else if (data['volume'] > liste_cuves[cuve_départ]['volume']) {
+                    alert('Le volume de lie sortie est supérieur au volume disponible dans la cuve !');
+                    return '';
+                } else {
+                    return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
+                            INSERT INTO sortie_lie (id, date, cuve_départ, volume) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', ${data['volume']});
+                            `.replace(/\s+/g, ' ').trim();;
+                }
+            case 'ajout_intrant':
+                if (data['quantité'] <= 0) {
+                    alert('La quantité ajoutée doit être supérieure à 0 !');
+                    return '';
+                } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
+                    alert('La cuve doit contenir du vin (hl) et non des vendanges (kg) !');
+                    return '';  
+                } else {
+                    return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
+                            INSERT INTO ajout_intrant (id, date, cuve_apport, libellé, quantité) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', '${data['libellé']}', ${data['quantité']});
+                            `.replace(/\s+/g, ' ').trim();;
+                }
+            default:
+                alert('Type d\'action inconnu !');
+                return '';
     }
 }
 
@@ -194,43 +241,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
     });
     $('form.action').on('submit', function (event) {
-        event.preventDefault();
+                event.preventDefault();
 
         let Datas = new FormData(this);
-        console.log(create_sqlRequest(Datas))
-        if (Datas.get('cuve_départ')) {
-            Datas.append('data_cuve_départ', JSON.stringify(liste_cuves[Datas.get('cuve_départ')]));
-        }
-        if (Datas.get('cuve_arrivée')) {
-            Datas.append('data_cuve_arrivée', JSON.stringify(liste_cuves[Datas.get('cuve_arrivée')]));
-        }
-        if (Datas.get('cuve_apport')) {
-            Datas.append('data_cuve_apport', JSON.stringify(liste_cuves[Datas.get('cuve_apport')]));
-        }
+        let request_sql = create_postSqlRequest(Datas)
 
-        let request = 
-        $.ajax({
-            type: this.method,
-            url: this.action,
-            data: Datas,
-            timeout: 120000,
-            cache: false,
-            contentType: false,
-            processData: false,
-        });
-        request.done(function (output_success) {
-            if (output_success.error) {
-                alert(output_success.message);
-            } else {
-                alert(output_success.message);
-                get_data_cuves();
-            }
-        });
-        request.fail(function (http_error) {
-            let server_msg = http_error.responseText;
-            let code = http_error.status;
-            let code_label = http_error.statusText;
-            alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
-        });
+        if (request_sql != '') {
+            let request = $.ajax({
+                type: this.method,
+                url: this.action,
+                data: {'module': '', 'request_sql': request_sql},
+                timeout: 120000,
+                cache: false,
+            });
+            request.done(function (output_success) {
+                if (output_success.error) {
+                    alert(output_success.message);
+                } else {
+                    alert(output_success.message);
+                    get_data_cuves();
+                }
+            });
+            request.fail(function (http_error) {
+                let server_msg = http_error.responseText;
+                let code = http_error.status;
+                let code_label = http_error.statusText;
+                alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
+            });
+        }
     })
 })

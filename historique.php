@@ -80,5 +80,5 @@
             } 
         ?>
     </tbody>
-    <button>Effacer dernière action</button>
+    <button id="effacer" onclick="erase_lastRequest()">Effacer dernière action</button>
 </table>
