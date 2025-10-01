@@ -127,11 +127,13 @@ function create_postSqlRequest(data) {
     let nom_table = data['nom_table']
     let cuve_départ = data['cuve_départ'] ?? data['cuve_apport'] ?? '/';
     let cuve_arrivée = data['cuve_arrivée'] ?? '/';
+    let volume_quantité = parseFloat(data['volume'] ?? data['quantité']);
     switch (nom_table) {
             case 'transfert_de_cuve':
                 if (data['volume'] <= 0) {
                     alert('Le volume transféré doit être supérieur à 0 !');
-                } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && liste_cuves[cuve_arrivée]['volume'] + data['volume'] > liste_cuves[cuve_arrivée]['volume_total']) {
+                } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && liste_cuves[cuve_arrivée]['volume'] + volume_quantité  > liste_cuves[cuve_arrivée]['volume_total']) {
+                    console.log(liste_cuves[cuve_arrivée]['volume'], volume_quantité , liste_cuves[cuve_arrivée]['volume_total'])
                     alert('Le volume total dans la cuve d\'arrivée serait dépassé !');
                     return '';
                 } else if (liste_cuves[cuve_départ]['unité'] == 'hl' && data['volume'] > liste_cuves[cuve_départ]['volume']) {
@@ -139,7 +141,7 @@ function create_postSqlRequest(data) {
                     return '';
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO transfert_de_cuve (id, date, cuve_départ, cuve_arrivée, volume) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', '${cuve_arrivée}', ${data['volume']});
+                            INSERT INTO transfert_de_cuve (id, date, cuve_départ, cuve_arrivée, volume) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${cuve_arrivée}', '${volume_quantité }');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             case 'apport_de_vendanges':
@@ -148,7 +150,7 @@ function create_postSqlRequest(data) {
                     return '';
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO apport_de_vendanges (id, date, parcelle, quantité, cuve_apport, appelation, cépage) VALUES (LAST_INSERT_ID(), ${data['date']}, '${data['parcelle']}', ${data['quantité']}, '${cuve_départ}', '${data['appelation']}', '${data['cépage']}');
+                            INSERT INTO apport_de_vendanges (id, date, parcelle, quantité, cuve_apport, appelation, cépage) VALUES (LAST_INSERT_ID(), '${data['date']}', '${data['parcelle']}', '${volume_quantité }', '${cuve_départ}', '${data['appelation']}', '${data['cépage']}');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             case 'mise_en_bouteille':
@@ -158,31 +160,31 @@ function create_postSqlRequest(data) {
                 } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
                     alert('La cuve doit contenir du vin (hl) et non des vendanges (kg) !');
                     return '';  
-                } else if (data['volume'] > liste_cuves[cuve_départ]['volume']) {
+                } else if (volume_quantité  > liste_cuves[cuve_départ]['volume']) {
                     alert('Le volume mis en bouteille est supérieur au volume disponible dans la cuve !');
                     return '';
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO mise_en_bouteille (id, date, cuve_départ, volume, numéro_lot, appelation) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', ${data['volume']}, '${data['numéro_lot']}', '${data['appelation']}');
+                            INSERT INTO mise_en_bouteille (id, date, cuve_départ, volume, numéro_lot, appelation) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${volume_quantité }', '${data['numéro_lot']}', '${data['appelation']}');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             case 'sortie_lie':
-                if (data['volume'] <= 0) {
+                if (volume_quantité  <= 0) {
                     alert('Le volume de lie sortie doit être supérieur à 0 !');
                     return '';
                 } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
                     alert('La cuve doit contenir du vin (hl) et non des vendanges (kg) !');
                     return '';  
-                } else if (data['volume'] > liste_cuves[cuve_départ]['volume']) {
+                } else if (volume_quantité  > liste_cuves[cuve_départ]['volume']) {
                     alert('Le volume de lie sortie est supérieur au volume disponible dans la cuve !');
                     return '';
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO sortie_lie (id, date, cuve_départ, volume) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', ${data['volume']});
+                            INSERT INTO sortie_lie (id, date, cuve_départ, volume) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${volume_quantité }');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             case 'ajout_intrant':
-                if (data['quantité'] <= 0) {
+                if (volume_quantité  <= 0) {
                     alert('La quantité ajoutée doit être supérieure à 0 !');
                     return '';
                 } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
@@ -190,7 +192,7 @@ function create_postSqlRequest(data) {
                     return '';  
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO ajout_intrant (id, date, cuve_apport, libellé, quantité) VALUES (LAST_INSERT_ID(), ${data['date']}, '${cuve_départ}', '${data['libellé']}', ${data['quantité']});
+                            INSERT INTO ajout_intrant (id, date, cuve_apport, libellé, quantité) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${data['libellé']}', '${volume_quantité }');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             default:
@@ -245,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let Datas = new FormData(this);
         let request_sql = create_postSqlRequest(Datas)
-
+        console.log(request_sql, 'request_sql');
         if (request_sql != '') {
             let request = $.ajax({
                 type: this.method,
