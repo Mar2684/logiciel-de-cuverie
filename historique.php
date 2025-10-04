@@ -26,13 +26,15 @@
                     actions.date_action, 
                     actions.type_action, 
                     COALESCE(
-                        ajout_intrant.cuve_apport, 
                         transfert_de_cuve.cuve_départ,
                         mise_en_bouteille.cuve_départ, 
                         sortie_lie.cuve_départ, 
-                        apport_de_vendanges.cuve_apport,
                     '/') AS cuve_départ,
-                    IFNULL(transfert_de_cuve.cuve_arrivée, '/') AS cuve_arrivée,
+                    COALESCE(
+                        transfert_de_cuve.cuve_arrivée,
+                        ajout_intrant.cuve_apport, 
+                        apport_de_vendanges.cuve_apport,
+                    '/') AS cuve_arrivée,
                     COALESCE(
                         CONCAT(ajout_intrant.quantité, ' kg'),
                         CONCAT(apport_de_vendanges.quantité, ' kg'),

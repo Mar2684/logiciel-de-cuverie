@@ -26,15 +26,25 @@ function displayData(data) {
         table.innerHTML = "<tr><td colspan='5'>Aucun résultat trouvé</td></tr>";
         return;
     }
-    data.forEach(function(row) {
+    data_keys = Object.keys(data);
+    data_keys.forEach(function(key) {
+        let row = data[key];
         let rowHTML = "<tr>";
-        rowHTML += "<td>" + row.numéro_lot + "</td>";   
-        rowHTML += "<td>" + row.date_mise_en_bouteille + "</td>";
-        rowHTML += "<td>" + row.volume + "</td>";
-        rowHTML += "<td>" + row.type_de_vin + "</td>";
-        rowHTML += "<td>" + row.origine_des_raisins + "</td>";
+        rowHTML += "<td>" + (row.date_action ?? '/') + "</td>";   
+        rowHTML += "<td>" + (row.type_action ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.cuve_départ ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.cuve_arrivée ?? row.cuve_apport ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.volume ?? row.quantité ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.libellé ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.numéro_lot ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.appelation ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.cépage ?? '/') + "</td>";
+        rowHTML += "<td>" + (row.parcelle ?? '/') + "</td>";
         rowHTML += "</tr>";
+        console.log(table.outerHTML)
+        console.log(table.innerHTML + rowHTML);
         table.innerHTML += rowHTML;
+        console.log(table.innerHTML)
     });
 }
 
@@ -44,7 +54,7 @@ document.getElementById("buttonRecherche").addEventListener("click", function() 
         alert("Veuillez entrer un numéro de traçabilité.");
     } else {
         send("SELECT * FROM actions JOIN mise_en_bouteille ON actions.id = mise_en_bouteille.id WHERE numéro_lot = '" + inputValue + "'", function(data) {
-            console.log(data, 'data');
+            displayData(data);
         });
     }
 });

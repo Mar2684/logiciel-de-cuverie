@@ -12,7 +12,7 @@
       <label for="numéroLot">Numéro de lot</label>
       <input id="buttonRecherche" type="button" value="Rechercher">
     </div>
-    <table id="traçabilité_table">
+    <table>
       <thead>
         <tr>
             <th>Date d'enregistrement</th>
@@ -27,6 +27,9 @@
             <th>Parcelle</th>
         </tr>
     </thead>
+    <tbody id="traçabilité_table">
+      <tr><td>2025-10-01 22:25:01</td><td>mise</td><td>I2</td><td>/</td><td>40</td><td>/</td><td>0123</td><td>undefined</td><td>/</td><td>/</td></tr>
+    </tbody>
     </table>
   </body>
 </html>

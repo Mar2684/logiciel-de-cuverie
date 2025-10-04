@@ -247,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let Datas = new FormData(this);
         let request_sql = create_postSqlRequest(Datas)
-        console.log(request_sql, 'request_sql');
         if (request_sql != '') {
             let request = $.ajax({
                 type: this.method,
