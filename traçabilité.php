@@ -15,6 +15,7 @@
     <table>
       <thead>
         <tr>
+            <th id="col_1"></th>
             <th>Date d'enregistrement</th>
             <th>Type de l'action</th>
             <th>Cuve_départ</th>
@@ -28,7 +29,6 @@
         </tr>
     </thead>
     <tbody id="traçabilité_table">
-      <tr><td>2025-10-01 22:25:01</td><td>mise</td><td>I2</td><td>/</td><td>40</td><td>/</td><td>0123</td><td>undefined</td><td>/</td><td>/</td></tr>
     </tbody>
     </table>
   </body>

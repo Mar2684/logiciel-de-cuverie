@@ -10,12 +10,12 @@ function get_data_cuves() {
         type: "POST",
         url: 'dataBase_request.php',
         data: {'module': 'cuves_data'},
-        timeout: 120000,
+        timeout: 5000,
         cache: false,
     })
     request.done(function (output_success) {
         if (output_success.error) {
-            alert('Impossible de récupérer les données serveur : ' + output_success.message);
+            alert('Immpossible de récupérer les données serveur : ' + output_success.message);
         } else {
             liste_cuves = {}
             Object.keys(output_success.data).forEach(key => {
@@ -51,7 +51,7 @@ function synch_cuve() {
             type: "POST",
             url: 'dataBase_request.php',
             data: {'module': 'actions_data'},
-            timeout: 120000,
+            timeout: 5000,
             cache: false,
         });
     request.done(function (output_success) {
@@ -67,7 +67,7 @@ function synch_cuve() {
                     let volume_quantité = parseFloat(action["volume_quantité"])
                     switch (action["type_action"]) {
                         case 'transfert_de_cuve':
-                            
+                            console.log(cuve_départ, cuve_arrivée, volume_quantité)
                             if (liste_cuves[cuve_départ]['unité'] == 'hl') {
                                 liste_cuves[cuve_départ]['volume'] -= volume_quantité
                                 liste_cuves[cuve_arrivée]['volume'] += volume_quantité
@@ -96,7 +96,6 @@ function synch_cuve() {
             } catch (e) {
                 alert(e.message);
             }
-
             $('div.cuves').each(function () {
                 let cuve = this.id;
                 liste_cuves[cuve]
@@ -165,7 +164,7 @@ function create_postSqlRequest(data) {
                     return '';
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO mise_en_bouteille (id, date, cuve_départ, volume, numéro_lot, appelation) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${volume_quantité }', '${data['numéro_lot']}', '${data['appelation']}');
+                            INSERT INTO mise_en_bouteille (id, date, cuve_départ, volume, numéro_lot) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${volume_quantité }', '${data['numéro_lot']}');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             case 'sortie_lie':
@@ -203,6 +202,22 @@ function create_postSqlRequest(data) {
 
 document.addEventListener('DOMContentLoaded', () => {
     get_data_cuves();
+    let request = $.ajax({
+        type: "POST",
+        url: 'dataBase_request.php',
+        data: {'module': '', "request_sql": "SELECT * FROM actions JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id WHERE numéro_lot = '1234'"},
+        timeout: 5000,
+        cache: false,
+    })
+    request.done(function (output_success) {
+        console.log(output_success.data)
+    })
+    request.fail(function (http_error) {
+        let server_msg = http_error.responseText;
+        let code = http_error.status;
+        let code_label = http_error.statusText;
+        alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
+    });
     $('select.select-cuves').each(function () {
             let groupe
             groupe = document.createElement('optgroup')

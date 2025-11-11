@@ -46,17 +46,16 @@
                     IFNULL(mise_en_bouteille.numéro_lot, '/') AS numéro_lot,
                     COALESCE(
                         apport_de_vendanges.appelation, 
-                        mise_en_bouteille.appelation, 
                     '/') AS appelation,
                     IFNULL(apport_de_vendanges.cépage, '/') AS cépage,
                     IFNULL(apport_de_vendanges.parcelle, '/') AS parcelle
                     
                 FROM actions
-                LEFT JOIN ajout_intrant ON actions.id = ajout_intrant.id
-                LEFT JOIN transfert_de_cuve ON actions.id = transfert_de_cuve.id
-                LEFT JOIN mise_en_bouteille ON actions.id = mise_en_bouteille.id
-                LEFT JOIN sortie_lie ON actions.id = sortie_lie.id
-                LEFT JOIN apport_de_vendanges ON actions.id = apport_de_vendanges.id
+                LEFT JOIN ajout_intrant ON actions.id_action = ajout_intrant.id
+                LEFT JOIN transfert_de_cuve ON actions.id_action = transfert_de_cuve.id
+                LEFT JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id
+                LEFT JOIN sortie_lie ON actions.id_action = sortie_lie.id
+                LEFT JOIN apport_de_vendanges ON actions.id_action = apport_de_vendanges.id
                 ORDER BY actions.date_action DESC
                 ";
                 $result = mysqli_query($link, $request_sql);
