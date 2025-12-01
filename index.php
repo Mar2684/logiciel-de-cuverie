@@ -22,7 +22,7 @@
     <header>
         <a href="index.php?page=cuve" id="accueil">Accueil</a>
         <a href="index.php?page=historique" id="historique">Historique</a>
-        <a href="index.php?page=traçabilité">Traçabalité</a>
+        <a href="index.php?page=traçabilité" id="traçabilité">Traçabalité</a>
     </header>
     <main>
         <?php

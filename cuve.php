@@ -8,14 +8,14 @@
 <form class="action" id="action1" action="dataBase_request.php" method="post"><input type="hidden" name="nom_table" value="transfert_de_cuve">
     <div><p>Date du transfert</p><input type="date" name="date" required></div>
     <div><p>Cuve de départ</p><select class="select-cuves" name="cuve_départ" required><option value="">-- Choisir une cuve --</option></select></div>
-    <div><p>Volume transféré [HI]</p><input type="number" name="volume" required></div>
+    <div><p>Volume transféré [HI]</p><input type="number" step="0.001" name="volume" required></div>
     <div><p>Cuve d'arrivée</p><select class="select-cuves" name="cuve_arrivée" required><option value="">-- Choisir une cuve --</option></select></div>
     <div><input type="submit" value="valider"></div>
 </form>
 <form class="action" id="action2" action="dataBase_request.php" method="post"><input type="hidden" name="nom_table" value="apport_de_vendanges">
     <div><p>Date d'appport</p><input type="date" name="date" required></div>
     <div><p>Parcelle</p><input type="text" name="parcelle" required></div>
-    <div><p>Quantité [kg]</p><input type="number" name="quantité"required></div>
+    <div><p>Quantité [kg]</p><input type="number" step="0.001" name="quantité"required></div>
     <div><p>Cuve apport</p><select class="select-cuves" name="cuve_apport" required><option value="">-- Choisir une cuve --</option></select></div>
     <div><p>Appelation</p><input type="text" name="appelation" required></div>
     <div><p>Cépage</p><input type="text" name="cépage" required></div>
@@ -24,21 +24,21 @@
 <form class="action" id="action3" action="dataBase_request.php" method="post"><input type="hidden" name="nom_table" value="mise_en_bouteille">
     <div><p>Date du transfert</p><input type="date" name="date" required></div>
     <div><p>Cuve de départ</p><select class="select-cuves" name="cuve_départ" required><option value="">-- Choisir une cuve --</option></select></div>
-    <div><p>Volume transféré [HI]</p><input type="number" name="volume" required></div>
-    <div><p>Numéro de lot</p><input type="number" name="numéro_lot"></div>
+    <div><p>Volume transféré [HI]</p><input step="0.001" name="volume" required></div>
+    <div><p>Numéro de lot</p><input type="text" name="numéro_lot"></div>
     <div><input type="submit" value="valider"></div>
 </form>
 <form class="action" id="action4" action="dataBase_request.php" method="post"><input type="hidden" name="nom_table" value="sortie_lie">
     <div><p>Date du transfert</p><input type="date" name="date" required></div>
     <div><p>Cuve de départ</p><select class="select-cuves" name="cuve_départ" required><option value="">-- Choisir une cuve --</option></select></div>
-    <div><p>Volume transféré [HI]</p><input type="number" name="volume" required></div>
+    <div><p>Volume transféré [HI]</p><input type="number" step="0.001" name="volume" required></div>
     <div><input type="submit" value="valider"></div>
 </form>
 <form class="action" id="action5" action="dataBase_request.php" method="post"><input type="hidden" name="nom_table" value="ajout_intrant">
     <div><p>Date d'appport</p><input type="date" name="date" required></div>
     <div><p>Cuve d'apport</p><select class="select-cuves" name="cuve_apport" required><option value="">-- Choisir une cuve --</option></select></div>
     <div><p>Libellé de l'intrant : Nom/Prénom</p><input type="text" name="libellé" required></div>
-    <div><p>Quantité apportée [HI]</p><input type="number" name="quantité" required></div>
+    <div><p>Quantité apportée</p><input type="text" name="quantité" required></div>
     <div><input type="submit" value="valider"></div>
 </form>
 <div id="all-cuves">

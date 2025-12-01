@@ -59,6 +59,7 @@ function synch_cuve() {
             alert('Impossible de synchroniser les données serveur : ' + output_success.message);
         } else {            
             try {
+                console.log(output_success);
                 let num_action = Object.keys(output_success.data).length - 1
                 for (let i =  Object.keys(output_success.data).length - 1; i >= 0; i--) {
                     let action = output_success.data[i]
@@ -71,15 +72,27 @@ function synch_cuve() {
                             if (liste_cuves[cuve_départ]['unité'] == 'hl') {
                                 liste_cuves[cuve_départ]['volume'] -= volume_quantité
                                 liste_cuves[cuve_arrivée]['volume'] += volume_quantité
-                            } else if (liste_cuves[cuve_départ]['unité'] == 'kg') {
+                            } else {
                                 liste_cuves[cuve_départ]['volume'] = 0
                                 liste_cuves[cuve_arrivée]['volume'] = volume_quantité
+                            }
+                            liste_cuves[cuve_arrivée]['appelation'] = liste_cuves[cuve_départ]['appelation']
+                            liste_cuves[cuve_arrivée]['cépage'] = liste_cuves[cuve_départ]['cépage']
+                            liste_cuves[cuve_arrivée]['millesmime'] = liste_cuves[cuve_départ]['millesmime']
+                            if (liste_cuves[cuve_départ]['unité'] == 'kg') {
+                                liste_cuves[cuve_départ]['appelation'] = ''
+                                liste_cuves[cuve_départ]['cépage'] = ''
+                                liste_cuves[cuve_départ]['millesmime'] = ''
                                 liste_cuves[cuve_arrivée]['unité'] = 'hl'
                                 liste_cuves[cuve_départ]['unité'] = 'hl'
                             }
                             break;
                         case 'apport_de_vendanges':
-                            liste_cuves[cuve_départ]['volume'] = volume_quantité
+                            if (liste_cuves[cuve_départ]['unité'] == 'hl') {
+                                liste_cuves[cuve_départ]['volume'] = volume_quantité
+                            } else {
+                                liste_cuves[cuve_départ]['volume'] += volume_quantité
+                            }
                             liste_cuves[cuve_départ]['unité'] = 'kg'
                             liste_cuves[cuve_départ]['appelation'] = action["appelation"]
                             liste_cuves[cuve_départ]['cépage'] = action["cépage"]
@@ -191,7 +204,7 @@ function create_postSqlRequest(data) {
                     return '';  
                 } else {
                     return `INSERT INTO actions (type_action, date_action) VALUES ('${nom_table}', NOW());
-                            INSERT INTO ajout_intrant (id, date, cuve_apport, libellé, quantité) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${data['libellé']}', '${volume_quantité }');
+                            INSERT INTO ajout_intrant (id, date, cuve_apport, libellé, quantité) VALUES (LAST_INSERT_ID(), '${data['date']}', '${cuve_départ}', '${data['libellé']}', '${data['quantité']}');
                             `.replace(/\s+/g, ' ').trim();;
                 }
             default:
@@ -202,22 +215,6 @@ function create_postSqlRequest(data) {
 
 document.addEventListener('DOMContentLoaded', () => {
     get_data_cuves();
-    let request = $.ajax({
-        type: "POST",
-        url: 'dataBase_request.php',
-        data: {'module': '', "request_sql": "SELECT * FROM actions JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id WHERE numéro_lot = '1234'"},
-        timeout: 5000,
-        cache: false,
-    })
-    request.done(function (output_success) {
-        console.log(output_success.data)
-    })
-    request.fail(function (http_error) {
-        let server_msg = http_error.responseText;
-        let code = http_error.status;
-        let code_label = http_error.statusText;
-        alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
-    });
     $('select.select-cuves').each(function () {
             let groupe
             groupe = document.createElement('optgroup')
@@ -262,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let Datas = new FormData(this);
         let request_sql = create_postSqlRequest(Datas)
+        console.log(request_sql)
         if (request_sql != '') {
             let request = $.ajax({
                 type: this.method,

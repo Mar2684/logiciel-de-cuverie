@@ -1,3 +1,6 @@
+#traçabilité {
+    border-bottom: 0px;
+}
 #container1 {
     display: flex;
     flex-direction: row;
@@ -20,10 +23,8 @@
     border-radius: 0.5vh;
 }
 
-#container1 label {
+.recherche label {
     position: absolute;
-    top: 3vh;
-    left: 2vw;
     height: 4vh;
     font-size: 1.3vw;
     line-height: 4vh;
@@ -33,13 +34,19 @@
     transition: all 0.3s ease-out;
     pointer-events: none;
 }
-#container1 input:focus {
-    outline: none;
+#num_lot ~ label {
+    top: 3vh;
+    left: 2vw;
 }
-#container1 input:focus ~ label {
+#num_cuve ~ label {
+    top: 3vh;
+    left: 45vw;
+}
+.recherche input:focus ~ label,
+.recherche input:not(:placeholder-shown) ~ label {
+    outline: none;
     font-size: 1.3vw;
-    top: 0.6vh;
-    left: 2.3vw;
+    transform: translate(0.3vw, -2.4vh);
 }
 #container1 input[type="button"]{
     margin-left: 1vw;
@@ -79,4 +86,31 @@ td, th {
 }
 #col_1 {
     width: 8vh;
+}
+button {
+    width: 3vh;
+    height: 3vh;
+    border: 2px solid black;
+    box-sizing: border-box;
+    padding: 0;
+}
+button:hover {
+    background-color: rgb(209, 209, 209);
+}
+.not_revealed img {
+    position: relative;
+    top: 0.2vh;
+    width: 2vh;
+    height: 1.2vh;
+    rotate: 90deg;
+}
+.revealed img {
+    position: relative;
+    top: 0.2vh;
+    width: 2vh;
+    height: 1.2vh;
+    rotate: 180deg;
+}
+.closed {
+    display: none;
 }

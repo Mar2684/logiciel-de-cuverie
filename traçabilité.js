@@ -1,4 +1,5 @@
 function send(module, request_sql) {
+    console.log(request_sql)
     return $.ajax({
         type: "POST",
         url: "dataBase_request.php",
@@ -17,121 +18,128 @@ function send(module, request_sql) {
     });
 }
 
-function displayData(data) {
-    let table = document.getElementById("traçabilité_table");
-    console.log(Object.keys(data).length);
-    console.log(data);
-    if (Object.keys(data).length === 0) {
-        console.log("no data");
-        table.innerHTML = "<tr><td colspan='10'>Aucun résultat trouvé</td></tr>";
-    } else {
-        console.log("data found");
-        data_keys = Object.keys(data);
-        data_keys.forEach(function(key) {
-            let row = data[key];
-            let rowHTML = "<tr>";
-            rowHTML += "<td></td>";
+function displayData(data, layer = 0, parent = "") {
+    Object.keys(data).forEach(function(key) {            
+        let row = JSON.parse(key);
+        let rowHTML = "";
+        if (layer == 0) {
+            rowHTML = "<tr id='"+ row.id_action +"' class=' not_revealed'>";
+        } else {
+            rowHTML = "<tr id='"+ row.id_action +"' class='"+ parent +" not_revealed' style='display:none;'>";
+        }
+        if (data[key] != '') {
+            rowHTML += "<td><button onclick=reveal(this)><img src='triangle.png'></button></td>";
             rowHTML += "<td>" + (row.date_action ?? '/') + "</td>";   
             rowHTML += "<td>" + (row.type_action ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cuve_départ ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cuve_arrivée ?? row.cuve_apport ?? '/') + "</td>";
-            rowHTML += "<td>" + (row.volume ?? row.quantité ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.volume_quantité ?? row.volume ?? '/') + "</td>";
             rowHTML += "<td>" + (row.libellé ?? '/') + "</td>";
             rowHTML += "<td>" + (row.numéro_lot ?? '/') + "</td>";
             rowHTML += "<td>" + (row.appelation ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cépage ?? '/') + "</td>";
             rowHTML += "<td>" + (row.parcelle ?? '/') + "</td>";
             rowHTML += "</tr>";
-            table.innerHTML = rowHTML;
-        })
-    }
+            document.getElementById("traçabilité_table").innerHTML += rowHTML;
+            console.log(rowHTML)
+            displayData(data[key], 1, parent + "_"+ row.id_action);
+        } else if (data[key] == '') {
+            rowHTML += "<td></td>";
+            rowHTML += "<td>" + (row.date_action ?? '/') + "</td>";   
+            rowHTML += "<td>" + (row.type_action ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.cuve_départ ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.cuve_arrivée ?? row.cuve_apport ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.volume_quantité ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.libellé ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.numéro_lot ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.appelation ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.cépage ?? '/') + "</td>";
+            rowHTML += "<td>" + (row.parcelle ?? '/') + "</td>";
+            rowHTML += "</tr>";            
+            console.log(rowHTML)
+            document.getElementById("traçabilité_table").innerHTML += rowHTML;
+        }
+    })
 }
 
 function traceabilitySearch(data, actions) {
-    console.log('data', data);
-    let actions_copy = actions;
-    if (data.cuve_départ != '/' || data.type_action == 'mise_en_bouteille') {
-        let actions_child = {}
-        for (let i = 0; i < Object.keys(actions).length; i++) {
-            let action = actions[i];
-            console.log('action', action, actions, i)
-            if (action.cuve_arrivée == data.cuve_départ) {
-                delete actions_copy[i]
-                Object.keys(actions).forEach((key) => {
-                    if (key < i) {
-                        actions_copy[key] = actions[key];
-                    } else if (key > i) {
-                        actions_copy[key - 1] = actions[key];
-                    }
-                })
-                actions_child[JSON.stringify(action)] = {[JSON.stringify(traceabilitySearch(action, actions_copy))]: {}};
+    let actions_child = {};
+    let cuve_départs = [];
+    Object.keys(actions).forEach((key) => {
+        if (actions[key].type_action == 'transfert_de_cuve') {
+            if (actions[key].cuve_arrivée == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (actions[key].id_action < data.id_action)) {
+                cuve_départs.push(actions[key].cuve_départ);
+                actions_child[JSON.stringify(actions[key])] = traceabilitySearch(actions[key], actions);
             }
-        };
-        if (data.type_action == 'mise_en_bouteille') {
-            return {[JSON.stringify(data)]: actions_child};
-        } else {
-            return actions_child;
+        } else if (actions[key].type_action == 'apport_de_vendanges' || actions[key].type_action == 'ajout_intrant') {
+            if (actions[key].cuve_départ == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (actions[key].id_action < data.id_action)) {
+                actions_child[JSON.stringify(actions[key])] = '' 
+            }
         }
-    } else {
-        return data
-    }
+    })
+    return actions_child
 }
-    
 
-document.getElementById("buttonRecherche").addEventListener("click", async function() {
-    var inputValue = parseFloat(document.getElementById("num_lot").value);
+async function getNumLot () {
+    let inputValue = document.getElementById("num_lot").value
     if (inputValue == "") {
-        alert("Veuillez entrer un numéro de traçabilité.");
+        alert("Veuillez entrer un numéro de lot.")
     } else {
         const result = await send("", "SELECT * FROM actions JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id WHERE numéro_lot = '" + inputValue + "'");
-        const request = `
-                    SELECT 
-                        actions.id_action,
-                        actions.date_action, 
-                        actions.type_action, 
-                        COALESCE( 
-                            transfert_de_cuve.cuve_départ,
-                            mise_en_bouteille.cuve_départ, 
-                            sortie_lie.cuve_départ, 
-                            apport_de_vendanges.cuve_apport,
-                        '/') AS cuve_départ,
-                        COALESCE(
-                            transfert_de_cuve.cuve_arrivée, 
-                            ajout_intrant.cuve_apport,
-                        '/') AS cuve_arrivée,
-                        COALESCE(
-                            ajout_intrant.quantité,
-                            apport_de_vendanges.quantité,
-                            mise_en_bouteille.volume,
-                            sortie_lie.volume,
-                            transfert_de_cuve.volume,
-                        '/') AS volume_quantité,
-                        COALESCE(
-                            ajout_intrant.date,
-                            apport_de_vendanges.date,
-                            mise_en_bouteille.date,
-                            sortie_lie.date,
-                            transfert_de_cuve.date,
-                        '/') AS date,
-                        IFNULL(ajout_intrant.libellé, '/') AS libellé,
-                        IFNULL(mise_en_bouteille.numéro_lot, '/') AS numéro_lot,
-                        COALESCE(
-                            apport_de_vendanges.appelation, 
-                        '/') AS appelation,
-                        IFNULL(apport_de_vendanges.cépage, '/') AS cépage,
-                        IFNULL(apport_de_vendanges.parcelle, '/') AS parcelle
-                    FROM actions
-                    LEFT JOIN ajout_intrant ON actions.id_action = ajout_intrant.id
-                    LEFT JOIN transfert_de_cuve ON actions.id_action = transfert_de_cuve.id
-                    LEFT JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id
-                    LEFT JOIN sortie_lie ON actions.id_action = sortie_lie.id
-                    LEFT JOIN apport_de_vendanges ON actions.id_action = apport_de_vendanges.id
-                    ORDER BY actions.id_action DESC
-                    `.replace(/\s+/g, ' ').trim();
-        console.log(request)
-        const actions = await send("", request);
-        console.log(actions, actions.data)
-        let final_result = traceabilitySearch(result.data[0], actions.data);
-        console.log(final_result);
+        const actions = await send("actions_data", "");
+        Object.keys(actions.data).forEach((key) => {
+            if (actions.data[key].id_action >= result.data[0].id_action) {
+                delete actions.data[key];
+            }
+        })  
+        throwAction(result, actions)
     }
-});
+}
+
+async function getNumCuve () {
+    let inputValue = document.getElementById("num_cuve").value
+    console.log(inputValue)
+    if (inputValue == "") {
+        alert("Vauillez entrer un numéro de cuve.")
+    } else {
+        // const result = await send("", "SELECT * FROM actions JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id WHERE numéro_lot = '" + numLot + "'");
+        const result = {'data': [{'cuve_départ': inputValue, 'id_action': 10000000000000000000000000000000000000000000000000000,}]}
+        const actions = await send("actions_data", "");
+        throwAction(result, actions)
+    }
+}
+async function throwAction(inputData, actions) {  
+    let final_result = {[JSON.stringify(inputData.data[0])]: traceabilitySearch(inputData.data[0], actions.data)};
+    console.log(final_result, 'ok')
+    document.getElementById("traçabilité_table").innerHTML = "";
+    displayData(final_result);
+}
+
+function reveal(element) {
+    if (element.parentNode.parentNode.classList.contains("revealed")) {
+        element.parentNode.parentNode.classList.remove("revealed");
+        element.parentNode.parentNode.classList.add("not_revealed");
+    } else {
+        element.parentNode.parentNode.classList.remove("not_revealed");
+        element.parentNode.parentNode.classList.add("revealed");
+    }
+    let id = element.parentNode.parentNode.id;
+    if (element.parentNode.parentNode.classList.contains("revealed")) {
+        let trs = document.querySelectorAll('tbody tr');
+        trs.forEach(tr => {
+            let classes = tr.classList[0].split("_");
+            if (classes[classes.length-1] == id) {
+                tr.style.display = "";
+            }
+        });
+    } else {
+        let trs = document.querySelectorAll('tbody tr');
+        trs.forEach(tr => {
+            if (tr.classList[0].includes(id)) {
+                tr.style.display = "None";
+                tr.classList.remove("revealed");
+                tr.classList.add("not_revealed");
+            }
+        });
+    }
+}

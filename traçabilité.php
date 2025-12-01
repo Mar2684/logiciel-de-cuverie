@@ -8,9 +8,16 @@
   </head>
   <body>
     <div id="container1">
-      <input type="text" name="numéroLot" id="num_lot">
-      <label for="numéroLot">Numéro de lot</label>
-      <input id="buttonRecherche" type="button" value="Rechercher">
+      <div class="recherche" style="margin-right: 10vw;">
+        <input type="text" name="numéroLot" id="num_lot" placeholder=" ">
+        <label for="num_lot">Numéro de lot</label>
+        <input id="buttonRechercheLot" onclick="getNumLot()" type="button" value="Rechercher">
+      </div>
+      <div class="recherche">
+        <input type="text" name="numéroCuve" id="num_cuve" placeholder=" ">
+        <label for="num_cuve">Numéro de cuve</label>
+        <input id="buttonRechercheCuve" onclick="getNumCuve()" type="button" value="Rechercher">
+      </div>
     </div>
     <table>
       <thead>
