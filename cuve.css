@@ -104,9 +104,17 @@
 
 .cuves .nom {
     margin: 2% 0px 0px 0px;
-    width: 100%;
+    width: 60%;
+    padding-left: 20%;
     font-size: 2vw;
     height: 15%;
+    box-sizing: border-box;
+}
+
+.cuves .volume_max {
+    width: 40%;
+    margin: 2% 0px 0px 0px;
+    text-align: left;
 }
 
 .fill_indicator {
@@ -151,13 +159,18 @@
 }
 .appelation p {
     width: 95%;
-    height: calc(100% / 8);
+    height: calc(100% / 6);
     box-sizing: border-box;
     background-color: rgb(169, 169, 169);
     border-radius: 5px / 5px;
     font-size: 1vw;
     margin: 0px;
-    line-height: 1;
+    padding-left: 5%;
+    overflow-wrap: break-word;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-color: rgb(60, 60, 60) transparent;
+    scrollbar-width: 5%;
     border: 1px solid black; 
     font-weight: bold;
     text-align: center;

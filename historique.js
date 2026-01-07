@@ -17,3 +17,4 @@ function erase_lastRequest() {
         alert("Erreur : " + http_error.responseText);
     });
 }
+window.erase_lastRequest = erase_lastRequest

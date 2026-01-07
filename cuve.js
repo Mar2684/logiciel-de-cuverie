@@ -1,9 +1,36 @@
-let list_cuves_inox = ["I0", "I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9", "I10", "I11"]
-let list_cuves_fibre = ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9"]
-let list_barriques = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11"]
-let list_cuvons = ["C1"]
-let liste_nom_cuves = [...list_cuves_inox, ...list_cuves_fibre, ...list_barriques, ...list_cuvons];
-let liste_cuves = {}
+import {liste_cuves, liste_nom_cuves, sauvegarder} from './variables.js';
+
+window.addEventListener('beforeunload', () => {
+    sauvegarder(); 
+});
+
+
+const liste_parcelles = [
+  "COURROIE DES VERNAIS, Cinsault, 22.5",
+  "COURROIE DES VERNAIS, Lavallées en lyre, 12.1",
+  "COURROIE DES VERNAIS, Merlots, 12.2",
+  "COURROIE DES VERNAIS, Muscat petit grain, 22.1",
+  "COURROIE DES VERNAIS, Muscats, 22.4",
+  "COURROIE DES VERNAIS, Parcelle de Jean, 22.2",
+  "COURROIE DES VERNAIS, Ribols en lyre, 22.3",
+  "CROIX DE GRANIER, Cinsaults maison bleue, 14.1",
+  "CROIX DE GRANIER, Gobelets maison bleue, 14.2",
+  "CROIX DE GRANIER, Grenache Cyprès maison bleue, 14.3",
+  "CROIX DE GRANIER, Grenaches au-dessus maison bleue, 14.4",
+  "LES GRANDES VIGNES, Gleize, 1.3",
+  "LES GRANDES VIGNES, Gobelets, 1.5",
+  "LES GRANDES VIGNES, Jeunes Grenaches, 1.8",
+  "LES GRANDES VIGNES, Rangée qui descendent, 1.2",
+  "LES GRANDES VIGNES, Rangées courtes, 1.1",
+  "LES GRANDES VIGNES, Syrah devant, 1.10",
+  "LES GRANDES VIGNES, Syrah longues rangées, 1.6",
+  "LES GRANDES VIGNES, Vielles Grenaches, 1.7",
+  "LES PIGIERES, Sous Martial, 2.2",
+  "LES PIGIERES, Sous Portalier, 2.1",
+  "LES PIGIERES, Sous route, 2.4",
+  "LES PIGIERES, Syrah Martial, 23.1",
+  "LES PIGIERES, Vigne de Dieu - Grenaches, 21.5"
+];
 
 function get_data_cuves() {
     let request = $.ajax({
@@ -17,7 +44,6 @@ function get_data_cuves() {
         if (output_success.error) {
             alert('Immpossible de récupérer les données serveur : ' + output_success.message);
         } else {
-            liste_cuves = {}
             Object.keys(output_success.data).forEach(key => {
                 let row = output_success.data[key]
                 row['volume'] = parseFloat(row['volume'])
@@ -59,7 +85,6 @@ function synch_cuve() {
             alert('Impossible de synchroniser les données serveur : ' + output_success.message);
         } else {            
             try {
-                console.log(output_success);
                 let num_action = Object.keys(output_success.data).length - 1
                 for (let i =  Object.keys(output_success.data).length - 1; i >= 0; i--) {
                     let action = output_success.data[i]
@@ -68,7 +93,6 @@ function synch_cuve() {
                     let volume_quantité = parseFloat(action["volume_quantité"])
                     switch (action["type_action"]) {
                         case 'transfert_de_cuve':
-                            console.log(cuve_départ, cuve_arrivée, volume_quantité)
                             if (liste_cuves[cuve_départ]['unité'] == 'hl') {
                                 liste_cuves[cuve_départ]['volume'] -= volume_quantité
                                 liste_cuves[cuve_arrivée]['volume'] += volume_quantité
@@ -111,7 +135,6 @@ function synch_cuve() {
             }
             $('div.cuves').each(function () {
                 let cuve = this.id;
-                liste_cuves[cuve]
                 if (liste_cuves[cuve]['unité'] == 'kg') {
                     this.querySelector(".rate").style.height = '0%';
                     this.querySelector(".fill_indicator").style.background = 'linear-gradient(to right, rgb(13, 104, 0), rgb(13, 197, 0), rgb(13, 54, 0))';
@@ -119,10 +142,17 @@ function synch_cuve() {
                     this.querySelector(".rate").style.height = 100 - (liste_cuves[cuve]['volume'] / liste_cuves[cuve]['volume_total'] * 100) + '%';
                     this.querySelector(".fill_indicator").style.background = "linear-gradient(to right, rgb(104, 0, 0), rgb(197, 0, 0), rgb(54, 0, 0))";
                 }
-                this.querySelector('.textAppelation').textContent = liste_cuves[cuve]['appelation'];
-                this.querySelector('.textMillesime').textContent = liste_cuves[cuve]['millesmime'];
-                this.querySelector('.textCépage').textContent = liste_cuves[cuve]['cépage'];
+                if (liste_cuves[cuve]['volume'] == 0) {
+                    this.querySelector('.textAppelation').textContent = "";
+                    this.querySelector('.textMillesime').textContent = "";
+                    this.querySelector('.textCépage').textContent = "";
+                } else {
+                    this.querySelector('.textAppelation').textContent = liste_cuves[cuve]['appelation'];
+                    this.querySelector('.textMillesime').textContent = liste_cuves[cuve]['millesmime'];
+                    this.querySelector('.textCépage').textContent = liste_cuves[cuve]['cépage'];
+                }
                 this.querySelector('.volume').textContent = liste_cuves[cuve]['volume'] + ' ' + liste_cuves[cuve]['unité'];
+                this.querySelector('.volume_max').innerHTML = liste_cuves[cuve]['volume_total'] + 'hl'
             })
         };
     })
@@ -220,40 +250,48 @@ document.addEventListener('DOMContentLoaded', () => {
             groupe = document.createElement('optgroup')
             groupe.label = 'Cuves inox'
             this.appendChild(groupe)
-            for (let i in list_cuves_inox) {
+            for (let i in liste_nom_cuves.cuves_inox) {
                 let option = document.createElement('option')
-                option.value = list_cuves_inox[i]
-                option.innerHTML = list_cuves_inox[i]
+                option.value = liste_nom_cuves.cuves_inox[i]
+                option.innerHTML = liste_nom_cuves.cuves_inox[i]
                 groupe.appendChild(option)
+                console.log(i, 'cuve')
             }
             groupe = document.createElement('optgroup')
             groupe.label = 'Cuves fibre'
             this.appendChild(groupe)
-            for (let i in list_cuves_fibre) {
+            for (let i in liste_nom_cuves.cuves_fibres) {
                 let option = document.createElement('option')
-                option.value = list_cuves_fibre[i]
-                option.innerHTML = list_cuves_fibre[i]
+                option.value = liste_nom_cuves.cuves_fibres[i]
+                option.innerHTML = liste_nom_cuves.cuves_fibres[i]
                 groupe.appendChild(option)
             }
             groupe = document.createElement('optgroup')
             groupe.label = 'Barriques'
             this.appendChild(groupe)
-            for (let i in list_barriques) {
+            for (let i in liste_nom_cuves.barriques) {
                 let option = document.createElement('option')
-                option.value = list_barriques[i]
-                option.innerHTML = list_barriques[i]
+                option.value = liste_nom_cuves.barriques[i]
+                option.innerHTML = liste_nom_cuves.barriques[i]
                 groupe.appendChild(option)
             }
             groupe = document.createElement('optgroup')
             groupe.label = 'Cuvons'
             this.appendChild(groupe)
-            for (let i in list_cuvons) {
+            for (let i in liste_nom_cuves.cuvons) {
                 let option = document.createElement('option')
-                option.value = list_cuvons[i]
-                option.innerHTML = list_cuvons[i]
+                option.value = liste_nom_cuves.cuvons[i]
+                option.innerHTML = liste_nom_cuves.cuvons[i]
                 groupe.appendChild(option)
             }
     });
+    liste_parcelles.forEach((parcelle) => {
+        let option
+        option = document.createElement('option')
+        option.value = parcelle
+        option.innerHTML = parcelle
+        document.getElementById("select-parcelle").appendChild(option)
+    })
     $('form.action').on('submit', function (event) {
                 event.preventDefault();
 
@@ -285,3 +323,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 })
+window.aff_action = aff_action;

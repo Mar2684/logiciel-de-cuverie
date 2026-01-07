@@ -1,5 +1,11 @@
+import {liste_cuves, liste_nom_cuves, charger} from './variables.js';
+
+charger(); 
+
+//pour la fonction display_data
+let id = 0
+
 function send(module, request_sql) {
-    console.log(request_sql)
     return $.ajax({
         type: "POST",
         url: "dataBase_request.php",
@@ -18,14 +24,15 @@ function send(module, request_sql) {
     });
 }
 
-function displayData(data, layer = 0, parent = "") {
-    Object.keys(data).forEach(function(key) {            
+function displayData(data, layer = 0, parent = 0) {
+    Object.keys(data).forEach(function(key) {     
+        id += 1  
         let row = JSON.parse(key);
         let rowHTML = "";
         if (layer == 0) {
-            rowHTML = "<tr id='"+ row.id_action +"' class=' not_revealed'>";
+            rowHTML = "<tr id='"+ id.toString() +"' class=' not_revealed'>";
         } else {
-            rowHTML = "<tr id='"+ row.id_action +"' class='"+ parent +" not_revealed' style='display:none;'>";
+            rowHTML = "<tr id='"+ id.toString() +"' class='"+ parent +" not_revealed' style='display:none;'>";
         }
         if (data[key] != '') {
             rowHTML += "<td><button onclick=reveal(this)><img src='triangle.png'></button></td>";
@@ -41,8 +48,7 @@ function displayData(data, layer = 0, parent = "") {
             rowHTML += "<td>" + (row.parcelle ?? '/') + "</td>";
             rowHTML += "</tr>";
             document.getElementById("traçabilité_table").innerHTML += rowHTML;
-            console.log(rowHTML)
-            displayData(data[key], 1, parent + "_"+ row.id_action);
+            displayData(data[key], 1, parent + "_"+ id.toString());
         } else if (data[key] == '') {
             rowHTML += "<td></td>";
             rowHTML += "<td>" + (row.date_action ?? '/') + "</td>";   
@@ -56,7 +62,6 @@ function displayData(data, layer = 0, parent = "") {
             rowHTML += "<td>" + (row.cépage ?? '/') + "</td>";
             rowHTML += "<td>" + (row.parcelle ?? '/') + "</td>";
             rowHTML += "</tr>";            
-            console.log(rowHTML)
             document.getElementById("traçabilité_table").innerHTML += rowHTML;
         }
     })
@@ -65,23 +70,39 @@ function displayData(data, layer = 0, parent = "") {
 function traceabilitySearch(data, actions) {
     let actions_child = {};
     let cuve_départs = [];
+    let volume = liste_cuves[data.cuve_départ].volume
+    let apport_de_vendanges = null
     Object.keys(actions).forEach((key) => {
-        if (actions[key].type_action == 'transfert_de_cuve') {
-            if (actions[key].cuve_arrivée == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (actions[key].id_action < data.id_action)) {
-                cuve_départs.push(actions[key].cuve_départ);
-                actions_child[JSON.stringify(actions[key])] = traceabilitySearch(actions[key], actions);
-            }
-        } else if (actions[key].type_action == 'apport_de_vendanges' || actions[key].type_action == 'ajout_intrant') {
-            if (actions[key].cuve_départ == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (actions[key].id_action < data.id_action)) {
+        if (actions[key].cuve_départ == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (parseInt(actions[key].id_action) < parseInt(data.id_action)) && volume != 0) {
+            if (actions[key].type_action == 'mise_en_bouteille') {
+                volume += parseInt(actions[key].volume_quantité);
+            } else if (actions[key].type_action == 'apport_de_vendanges' && (apport_de_vendanges == null || apport_de_vendanges == true)) {
+                if (data.cuve_départ == "I7") {
+                    console.log(actions[key], apport_de_vendanges)
+                }
+                apport_de_vendanges = true
                 actions_child[JSON.stringify(actions[key])] = '' 
+            } else if (actions[key].type_action == 'ajout_intrant') {
+                actions_child[JSON.stringify(actions[key])] = ''
+            } else if (actions[key].type_action == 'transfert_de_cuve' && apport_de_vendanges == true) {
+                apport_de_vendanges = false
             }
         }
+        if (actions[key].cuve_arrivée == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (parseInt(actions[key].id_action) < parseInt(data.id_action))) {
+            if (actions[key].type_action == 'transfert_de_cuve' && (volume - parseInt(actions[key].volume_quantité)) >= 0) {
+                cuve_départs.push(actions[key].cuve_départ);
+                volume -= parseInt(actions[key].volume_quantité);
+                liste_cuves[actions[key].cuve_départ].volume += parseInt(actions[key].volume_quantité);
+                actions_child[JSON.stringify(actions[key])] = traceabilitySearch(actions[key], actions);
+            } 
+        }
     })
+    console.log('------------------------')
     return actions_child
 }
 
 async function getNumLot () {
-    let inputValue = document.getElementById("num_lot").value
+    let inputValue = document.getElementById("select_numLot").value
     if (inputValue == "") {
         alert("Veuillez entrer un numéro de lot.")
     } else {
@@ -97,20 +118,20 @@ async function getNumLot () {
 }
 
 async function getNumCuve () {
-    let inputValue = document.getElementById("num_cuve").value
+    let inputValue = document.getElementById("select_numCuve").value
     console.log(inputValue)
     if (inputValue == "") {
         alert("Vauillez entrer un numéro de cuve.")
     } else {
-        // const result = await send("", "SELECT * FROM actions JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id WHERE numéro_lot = '" + numLot + "'");
-        const result = {'data': [{'cuve_départ': inputValue, 'id_action': 10000000000000000000000000000000000000000000000000000,}]}
+        const result = {'data': [{'cuve_départ': inputValue, 'id_action': '10000000000000000000000000000000000000000000000000000',}]}
         const actions = await send("actions_data", "");
+        console.log(actions)
         throwAction(result, actions)
     }
 }
 async function throwAction(inputData, actions) {  
     let final_result = {[JSON.stringify(inputData.data[0])]: traceabilitySearch(inputData.data[0], actions.data)};
-    console.log(final_result, 'ok')
+    console.log("result", final_result)
     document.getElementById("traçabilité_table").innerHTML = "";
     displayData(final_result);
 }
@@ -143,3 +164,59 @@ function reveal(element) {
         });
     }
 }
+// Expose functions used by inline HTML handlers to the global scope
+window.getNumCuve = getNumCuve;
+window.getNumLot = getNumLot;
+window.reveal = reveal;
+
+$('#select_numCuve').each(function () {
+    let groupe
+    groupe = document.createElement('optgroup')
+    groupe.label = 'Cuves inox'
+    this.appendChild(groupe)
+    for (let i in liste_nom_cuves.cuves_inox) {
+        let option = document.createElement('option')
+        option.value = liste_nom_cuves.cuves_inox[i]
+        option.innerHTML = liste_nom_cuves.cuves_inox[i]
+        groupe.appendChild(option)
+        console.log(i, 'cuve')
+    }
+    groupe = document.createElement('optgroup')
+    groupe.label = 'Cuves fibre'
+    this.appendChild(groupe)
+    for (let i in liste_nom_cuves.cuves_fibres) {
+        let option = document.createElement('option')
+        option.value = liste_nom_cuves.cuves_fibres[i]
+        option.innerHTML = liste_nom_cuves.cuves_fibres[i]
+        groupe.appendChild(option)
+    }
+    groupe = document.createElement('optgroup')
+    groupe.label = 'Barriques'
+    this.appendChild(groupe)
+    for (let i in liste_nom_cuves.barriques) {
+        let option = document.createElement('option')
+        option.value = liste_nom_cuves.barriques[i]
+        option.innerHTML = liste_nom_cuves.barriques[i]
+        groupe.appendChild(option)
+    }
+    groupe = document.createElement('optgroup')
+    groupe.label = 'Cuvons'
+    this.appendChild(groupe)
+    for (let i in liste_nom_cuves.cuvons) {
+        let option = document.createElement('option')
+        option.value = liste_nom_cuves.cuvons[i]
+        option.innerHTML = liste_nom_cuves.cuvons[i]
+        groupe.appendChild(option)
+    }
+});
+
+let num_lots = await send("", "SELECT numéro_lot FROM mise_en_bouteille")
+$('#select_numLot').each(function() {
+    Object.keys(num_lots.data).forEach((key) => {
+        console.log(key, num_lots.data[key].numéro_lot)
+        let option = document.createElement('option')
+        option.value = num_lots.data[key].numéro_lot
+        option.innerHTML = num_lots.data[key].numéro_lot
+        this.appendChild(option)
+    })
+})

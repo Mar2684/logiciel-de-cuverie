@@ -11,9 +11,9 @@
     align-items: center;
 }
 
-#container1 input[type="text"] {
+#container1 select {
     margin-left: 1vw;
-    font-size: 1.5vw;
+    font-size: 1vw;
     width: 20vw;
     height: 4vh;
     resize: none;
@@ -21,32 +21,6 @@
     border: none;
     border-bottom: 2px solid rgb(0, 0, 0);
     border-radius: 0.5vh;
-}
-
-.recherche label {
-    position: absolute;
-    height: 4vh;
-    font-size: 1.3vw;
-    line-height: 4vh;
-    color: rgb(0, 0, 0);
-    background-color: transparent;
-    font-weight: bold;
-    transition: all 0.3s ease-out;
-    pointer-events: none;
-}
-#num_lot ~ label {
-    top: 3vh;
-    left: 2vw;
-}
-#num_cuve ~ label {
-    top: 3vh;
-    left: 45vw;
-}
-.recherche input:focus ~ label,
-.recherche input:not(:placeholder-shown) ~ label {
-    outline: none;
-    font-size: 1.3vw;
-    transform: translate(0.3vw, -2.4vh);
 }
 #container1 input[type="button"]{
     margin-left: 1vw;
