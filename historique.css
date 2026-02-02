@@ -13,7 +13,9 @@ thead {
     height: 8vh;
     background-color: rgb(150, 150, 150);
 }
-
+tr {
+    height: 6vh;
+}
 caption {
     width: 100%;
     height: 5vh;

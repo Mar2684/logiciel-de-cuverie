@@ -4,7 +4,7 @@
     <input id="buttonRechercheLot" onclick="getNumLot()" type="button" value="Rechercher">
   </div>
   <div class="recherche">
-    <select id="select_numCuve" required><option value="">-- Choisir une cuve--</option></select>
+    <select id="select_numCuve" required><option value="">-- Choisir une cuve --</option></select>
     <input id="buttonRechercheCuve" onclick="getNumCuve()" type="button" value="Rechercher">
   </div>
 </div>
@@ -12,7 +12,7 @@
   <thead>
     <tr>
         <th id="col_1"></th>
-        <th>Date d'enregistrement</th>
+        <th>Date</th>
         <th>Type de l'action</th>
         <th>Cuve_départ</th>
         <th>Cuve arrivée</th>

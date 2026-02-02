@@ -1,42 +1,31 @@
-import {liste_cuves, liste_nom_cuves, charger} from './variables.js';
 
-charger(); 
 
-//pour la fonction display_data
-let id = 0
-
-function send(module, request_sql) {
-    return $.ajax({
-        type: "POST",
-        url: "dataBase_request.php",
-        data: {'module': module, 'request_sql': request_sql},
-        timeout: 120000,
-        cache: false,
-        success: function(output_success) {
-            return output_success;
-        },
-        error: function(http_error) {
-            let server_msg = http_error.responseText;
-            let code = http_error.status;
-            let code_label = http_error.statusText;
-            alert("Erreur " + code + " (" + code_label + ") : " + server_msg);
-        }
-    });
-}
+let id = 0;
+let cuves_data = {};
+(async () => {
+    let data = (await send("", "SELECT * FROM cuves")).data
+    Object.keys(data).forEach((key) => {
+        let nom = data[key]['nom']
+        delete data[key]['nom']
+        cuves_data[nom] = data[key]
+    })
+})()
+console.log(cuves_data)
 
 function displayData(data, layer = 0, parent = 0) {
+    console.log(data)
     Object.keys(data).forEach(function(key) {     
         id += 1  
         let row = JSON.parse(key);
         let rowHTML = "";
         if (layer == 0) {
-            rowHTML = "<tr id='"+ id.toString() +"' class=' not_revealed'>";
+            rowHTML = "<tr id='"+ id.toString() +"' style='background: rgb(0, 120, 0)' class=' not_revealed'>";
         } else {
             rowHTML = "<tr id='"+ id.toString() +"' class='"+ parent +" not_revealed' style='display:none;'>";
         }
         if (data[key] != '') {
             rowHTML += "<td><button onclick=reveal(this)><img src='triangle.png'></button></td>";
-            rowHTML += "<td>" + (row.date_action ?? '/') + "</td>";   
+            rowHTML += "<td>" + (row.date ?? '/') + "</td>";   
             rowHTML += "<td>" + (row.type_action ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cuve_départ ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cuve_arrivée ?? row.cuve_apport ?? '/') + "</td>";
@@ -51,7 +40,7 @@ function displayData(data, layer = 0, parent = 0) {
             displayData(data[key], 1, parent + "_"+ id.toString());
         } else if (data[key] == '') {
             rowHTML += "<td></td>";
-            rowHTML += "<td>" + (row.date_action ?? '/') + "</td>";   
+            rowHTML += "<td>" + (row.date ?? '/') + "</td>";   
             rowHTML += "<td>" + (row.type_action ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cuve_départ ?? '/') + "</td>";
             rowHTML += "<td>" + (row.cuve_arrivée ?? row.cuve_apport ?? '/') + "</td>";
@@ -67,37 +56,103 @@ function displayData(data, layer = 0, parent = 0) {
     })
 }
 
+function getCurrentVolume(nomCuve, id_action, actions) {
+    let volume = 0
+    Object.keys(actions).reverse().forEach((key) => {
+        if (actions[key].cuve_départ == nomCuve && parseInt(actions[key].id_action) < parseInt(id_action)) {
+            switch (actions[key].type_action) {
+                case "mise_en_bouteille":
+                    volume -= parseFloat(actions[key].volume_quantité)
+                    break
+                case "apport_de_vendanges":
+                    volume = "apport"
+                    break
+                case "transfert_de_cuve":
+                    if (volume == "apport") {
+                        volume = 0
+                    } else {
+                        volume -= parseFloat(actions[key].volume_quantité)
+                    }
+                    break
+            }
+        }
+        if (actions[key].cuve_arrivée == nomCuve && parseInt(actions[key].id_action) < parseInt(id_action)) {
+            switch (actions[key].type_action) {
+                case "transfert_de_cuve":
+                    if (volume == "apport") {
+                        volume = 0
+                    } else {
+                        volume += parseFloat(actions[key].volume_quantité)
+                    }
+                    break
+                case "apport_de_vendanges":
+                    volume = "apport"
+                    break
+            }
+        }
+    })
+    return volume
+}
+
 function traceabilitySearch(data, actions) {
     let actions_child = {};
     let cuve_départs = [];
-    let volume = liste_cuves[data.cuve_départ].volume
-    let apport_de_vendanges = null
+    let volume = getCurrentVolume(data.cuve_départ, data.id_action, actions)
+    let apport_de_vendanges = ''    
+    // Object.keys(actions).forEach((key) => {
+    //     if (actions[key].cuve_départ == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (parseInt(actions[key].id_action) < parseInt(data.id_action)) && volume != 0) {
+    //         if (actions[key].type_action == 'mise_en_bouteille') {
+    //             volume += parseFloat(actions[key].volume_quantité);
+    //         } else if (actions[key].type_action == 'apport_de_vendanges' && (apport_de_vendanges == null || apport_de_vendanges == true)) {
+    //             apport_de_vendanges = true
+    //             actions_child[JSON.stringify(actions[key])] = '' 
+    //         } else if (actions[key].type_action == 'ajout_intrant') {
+    //             actions_child[JSON.stringify(actions[key])] = ''
+    //         } else if (actions[key].type_action == 'transfert_de_cuve' && apport_de_vendanges == true) {
+    //             apport_de_vendanges = false
+    //         }
+    //     }
+    //     if (actions[key].cuve_arrivée == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (parseInt(actions[key].id_action) < parseInt(data.id_action)) && volume != 0) {
+    //         if (actions[key].type_action == 'transfert_de_cuve' && (volume - parseInt(actions[key].volume_quantité)) >= 0) {
+    //             cuve_départs.push(actions[key].cuve_départ);
+    //             volume -= parseFloat(actions[key].volume_quantité);
+    //             cuves_data[actions[key].cuve_départ].volume += parseInt(actions[key].volume_quantité);
+    //             actions_child[JSON.stringify(actions[key])] = traceabilitySearch(actions[key], actions);
+    //         } 
+    //     }
+    // })
     Object.keys(actions).forEach((key) => {
-        if (actions[key].cuve_départ == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (parseInt(actions[key].id_action) < parseInt(data.id_action)) && volume != 0) {
+        if (actions[key].cuve_départ == data.cuve_départ && parseInt(actions[key].id_action) < parseInt(data.id_action) && volume > 0) {
             if (actions[key].type_action == 'mise_en_bouteille') {
-                volume += parseInt(actions[key].volume_quantité);
-            } else if (actions[key].type_action == 'apport_de_vendanges' && (apport_de_vendanges == null || apport_de_vendanges == true)) {
-                if (data.cuve_départ == "I7") {
-                    console.log(actions[key], apport_de_vendanges)
-                }
-                apport_de_vendanges = true
+                volume += parseFloat(actions[key].volume_quantité)
+            } else if (actions[key].type_action == 'transfert_de_cuve') {
+                volume += parseFloat(actions[key].volume_quantité)
+            } else if (actions[key].type_action == 'apport_de_vendanges' && (apport_de_vendanges == '' || apport_de_vendanges == 'end')) {
                 actions_child[JSON.stringify(actions[key])] = '' 
+                apport_de_vendanges = 'start'
             } else if (actions[key].type_action == 'ajout_intrant') {
                 actions_child[JSON.stringify(actions[key])] = ''
-            } else if (actions[key].type_action == 'transfert_de_cuve' && apport_de_vendanges == true) {
-                apport_de_vendanges = false
             }
         }
-        if (actions[key].cuve_arrivée == data.cuve_départ && !(cuve_départs.includes(actions[key].cuve_départ)) && (parseInt(actions[key].id_action) < parseInt(data.id_action))) {
-            if (actions[key].type_action == 'transfert_de_cuve' && (volume - parseInt(actions[key].volume_quantité)) >= 0) {
-                cuve_départs.push(actions[key].cuve_départ);
-                volume -= parseInt(actions[key].volume_quantité);
-                liste_cuves[actions[key].cuve_départ].volume += parseInt(actions[key].volume_quantité);
-                actions_child[JSON.stringify(actions[key])] = traceabilitySearch(actions[key], actions);
-            } 
+        if (actions[key].cuve_départ == data.cuve_départ && parseInt(actions[key].id_action) < parseInt(data.id_action) && volume == 'apport') {
+            if (actions[key].type_action == 'apport_de_vendanges' && (apport_de_vendanges == '' || apport_de_vendanges == 'end')) {
+                actions_child[JSON.stringify(actions[key])] = '' 
+                apport_de_vendanges = 'start'
+            } else if (actions[key].type_action == 'ajout_intrant') {
+                actions_child[JSON.stringify(actions[key])] = ''
+            }
+        }
+        if (actions[key].cuve_arrivée == data.cuve_départ && parseInt(actions[key].id_action) < parseInt(data.id_action) && volume > 0) {
+            if (actions[key].type_action == 'transfert_de_cuve' && (volume- parseInt(actions[key].volume_quantité)) >= 0) {
+                cuve_départs.push(actions[key].cuve_départ)
+                volume -= parseFloat(actions[key].cuve_départ)
+                if (apport_de_vendanges == 'start') {
+                    apport_de_vendanges == 'end'
+                }
+                actions_child[JSON.stringify(actions[key])] = traceabilitySearch(actions[key], actions)
+            }
         }
     })
-    console.log('------------------------')
     return actions_child
 }
 
@@ -108,30 +163,27 @@ async function getNumLot () {
     } else {
         const result = await send("", "SELECT * FROM actions JOIN mise_en_bouteille ON actions.id_action = mise_en_bouteille.id WHERE numéro_lot = '" + inputValue + "'");
         const actions = await send("actions_data", "");
-        Object.keys(actions.data).forEach((key) => {
-            if (actions.data[key].id_action >= result.data[0].id_action) {
-                delete actions.data[key];
-            }
-        })  
         throwAction(result, actions)
     }
 }
 
 async function getNumCuve () {
     let inputValue = document.getElementById("select_numCuve").value
-    console.log(inputValue)
     if (inputValue == "") {
         alert("Vauillez entrer un numéro de cuve.")
     } else {
-        const result = {'data': [{'cuve_départ': inputValue, 'id_action': '10000000000000000000000000000000000000000000000000000',}]}
+        const result = (await send("", "SELECT * FROM cuves WHERE nom = '" + inputValue + "'"))
         const actions = await send("actions_data", "");
-        console.log(actions)
+        result.data[0]['cuve_départ'] = result.data[0].nom
+        result.data[0]['id_action'] = '100000000000000000000000'
+        result.data[0]['volume_quantité'] = result.data[0]['volume']
+        delete result.data[0].nom
+        delete result.data[0].volume
         throwAction(result, actions)
     }
 }
-async function throwAction(inputData, actions) {  
+function throwAction(inputData, actions) {  
     let final_result = {[JSON.stringify(inputData.data[0])]: traceabilitySearch(inputData.data[0], actions.data)};
-    console.log("result", final_result)
     document.getElementById("traçabilité_table").innerHTML = "";
     displayData(final_result);
 }
@@ -151,6 +203,8 @@ function reveal(element) {
             let classes = tr.classList[0].split("_");
             if (classes[classes.length-1] == id) {
                 tr.style.display = "";
+                console.log("rgb(0, '" + (120 + classes.length * 25) + "', 0)")
+                tr.style.background = "rgb(0, " + (120 + classes.length * 25) + ", 0)"
             }
         });
     } else {
@@ -164,10 +218,6 @@ function reveal(element) {
         });
     }
 }
-// Expose functions used by inline HTML handlers to the global scope
-window.getNumCuve = getNumCuve;
-window.getNumLot = getNumLot;
-window.reveal = reveal;
 
 $('#select_numCuve').each(function () {
     let groupe
@@ -210,13 +260,16 @@ $('#select_numCuve').each(function () {
     }
 });
 
-let num_lots = await send("", "SELECT numéro_lot FROM mise_en_bouteille")
-$('#select_numLot').each(function() {
-    Object.keys(num_lots.data).forEach((key) => {
-        console.log(key, num_lots.data[key].numéro_lot)
-        let option = document.createElement('option')
-        option.value = num_lots.data[key].numéro_lot
-        option.innerHTML = num_lots.data[key].numéro_lot
-        this.appendChild(option)
+(async () => {
+    let num_lots = await send("", "SELECT numéro_lot FROM mise_en_bouteille")
+    $('#select_numLot').each(function() {
+        Object.keys(num_lots.data).forEach((key) => {
+            console.log(key, num_lots.data[key].numéro_lot)
+            let option = document.createElement('option')
+            option.value = num_lots.data[key].numéro_lot
+            option.innerHTML = num_lots.data[key].numéro_lot
+            this.appendChild(option)
+        })
     })
-})
+})()
+

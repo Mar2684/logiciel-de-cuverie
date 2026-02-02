@@ -23,6 +23,7 @@
         <a href="index.php?page=cuve" id="accueil">Accueil</a>
         <a href="index.php?page=historique" id="historique">Historique</a>
         <a href="index.php?page=traçabilité" id="traçabilité">Traçabalité</a>
+        <a href="index.php?page=stockDisponible" id="stockDisponible">Stock disponible</a>
         <p id="adresse_bd">https://phpmyadmin.cluster030.hosting.ovh.net/index.php?pma_username=qrchwexmarius&pma_servername=qrchwexmarius.mysql.db</p>
     </header>
     <main>
@@ -37,9 +38,10 @@
                 }
         ?>
     </main>
+    <script src="commun.js"></script>
     <?php
         if (isset($_GET["page"])) {
-            echo "<script type='module' src='".$_GET["page"].".js'></script>";
+            echo "<script src='".$_GET["page"].".js'></script>";
         }
     ?>
   </body>

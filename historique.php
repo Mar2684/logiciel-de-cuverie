@@ -36,7 +36,7 @@
 
         <?php   
 
-        $link = mysqli_connect("qrchwexmarius.mysql.db","qrchwexmarius","6Bbt5nnnZX8JBA5","qrchwexmarius");
+        $link = mysqli_connect('127.0.0.1', 'root', '', 'cuverie');
 
 
             if (!$link) {

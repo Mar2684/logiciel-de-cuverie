@@ -51,6 +51,7 @@ thead {
 }
 tr {
     width: 100vw;
+    height: 6vh;
 }
 td, th {
     border: 1px solid black;
